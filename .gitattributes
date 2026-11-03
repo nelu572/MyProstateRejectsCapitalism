@@ -1,0 +1,15 @@
+# New production and experiment assets; existing Git history is not migrated.
+/Assets/Fonts/*.asset filter=lfs diff=lfs merge=lfs -text
+/Assets/Models/Environment/**/*.fbx filter=lfs diff=lfs merge=lfs -text
+/Assets/Models/Environment/**/*.obj filter=lfs diff=lfs merge=lfs -text
+/Assets/Textures/**/*.png filter=lfs diff=lfs merge=lfs -text
+/Assets/Lightmaps/*.exr filter=lfs diff=lfs merge=lfs -text
+/Assets/Scenes/_Development/**/*.exr filter=lfs diff=lfs merge=lfs -text
+/Assets/Scenes/_Development/**/Lightmap-*.png filter=lfs diff=lfs merge=lfs -text
+/Assets/Scenes/_Development/**/LightingData.asset filter=lfs diff=lfs merge=lfs -text
+/ArtSource/**/*.blend filter=lfs diff=lfs merge=lfs -text
+/ArtSource/**/*.obj filter=lfs diff=lfs merge=lfs -text
+"/Assets/Plugins/TextMesh Pro/Fonts/*.ttf" filter=lfs diff=lfs merge=lfs -text
+"/Assets/Plugins/TextMesh Pro/Sprites/*.png" filter=lfs diff=lfs merge=lfs -text
+"/Assets/Plugins/TextMesh Pro/Resources/Fonts & Materials/*.asset" filter=lfs diff=lfs merge=lfs -text
+"/Assets/Plugins/TextMesh Pro/Resources/Sprite Assets/*.asset" filter=lfs diff=lfs merge=lfs -text
