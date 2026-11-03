@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa8c24acd717fe843933d0f4fb7b3d77, type: 3}
+  m_Name: PlayerInputLockCheck
+  m_EditorClassIdentifier: 
+  lines:
+  - speaker: TEST
+    text: "\uC774\uB3D9\xB7\uC2DC\uC810\xB7\uC810\uD504 \uCC28\uB2E8 \uD655\uC778.
+      E / \uD074\uB9AD\uC73C\uB85C \uC885\uB8CC\uD569\uB2C8\uB2E4."
