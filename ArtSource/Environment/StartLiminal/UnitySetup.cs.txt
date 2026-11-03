@@ -1,0 +1,101 @@
+// In-memory Unity Editor method body. Candidate-only integration; not a game script.
+if(Application.isPlaying || !Application.dataPath.Replace('\\','/').EndsWith("MyProstateRejectsCapitalism/Assets")) return "Wrong Editor state";
+var scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+if(!scene.path.EndsWith("Act01_StartVisualValidation.unity")) return "Wrong scene";
+if(GameObject.Find("StartLiminalArchitecture")!=null) return "Already integrated";
+string folder="Assets/Materials/StartLiminal/";
+string tex="Assets/Textures/StartLiminal/";
+var mats=new System.Collections.Generic.Dictionary<string,Material>();
+foreach(var key in new[]{"Porcelain","Limestone","Paint","Metal","FrostedGlass"}) {
+  foreach(var suffix in new[]{"Base","Normal","MetalSmooth"}) {
+    var ti=(TextureImporter)AssetImporter.GetAtPath(tex+key+"_"+suffix+".png");
+    ti.textureType=suffix=="Normal"?TextureImporterType.NormalMap:TextureImporterType.Default;
+    ti.sRGBTexture=suffix=="Base"; ti.wrapMode=TextureWrapMode.Repeat; ti.anisoLevel=8; ti.maxTextureSize=1024;
+    ti.textureCompression=TextureImporterCompression.Uncompressed; ti.SaveAndReimport();
+  }
+  var m=new Material(Shader.Find("Universal Render Pipeline/Lit")); m.name="SL_"+key;
+  m.SetTexture("_BaseMap",AssetDatabase.LoadAssetAtPath<Texture2D>(tex+key+"_Base.png"));
+  m.SetTexture("_BumpMap",AssetDatabase.LoadAssetAtPath<Texture2D>(tex+key+"_Normal.png"));
+  m.SetTexture("_MetallicGlossMap",AssetDatabase.LoadAssetAtPath<Texture2D>(tex+key+"_MetalSmooth.png"));
+  m.EnableKeyword("_NORMALMAP");m.EnableKeyword("_METALLICSPECGLOSSMAP");
+  m.SetFloat("_Smoothness",1f);m.SetFloat("_BumpScale",key=="FrostedGlass"?.8f:.35f);
+  m.SetColor("_BaseColor",Color.white);
+  if(key=="FrostedGlass") {m.EnableKeyword("_EMISSION");m.SetColor("_EmissionColor",new Color(.16f,.22f,.23f));m.globalIlluminationFlags=MaterialGlobalIlluminationFlags.BakedEmissive;}
+  AssetDatabase.CreateAsset(m,folder+m.name+".mat");mats[key]=m;
+}
+foreach(var key in new[]{"Ceiling","Door","Reveal","Grout","Diffuser"}) {
+  var m=new Material(mats["Paint"]);m.name="SL_"+key;
+  if(key=="Ceiling") {m.SetColor("_BaseColor",new Color(.94f,.95f,.96f));m.SetFloat("_Smoothness",.2f);}
+  if(key=="Door") {m.SetColor("_BaseColor",new Color(.86f,.90f,.89f));m.SetFloat("_Smoothness",.36f);}
+  if(key=="Reveal" || key=="Grout") {
+    m.SetTexture("_BaseMap",null);m.SetTexture("_MetallicGlossMap",null);m.DisableKeyword("_METALLICSPECGLOSSMAP");
+    m.SetColor("_BaseColor",key=="Reveal"?new Color(.12f,.14f,.14f):new Color(.57f,.56f,.51f));m.SetFloat("_Smoothness",.15f);
+  }
+  if(key=="Diffuser") {
+    m.SetTexture("_BaseMap",null);m.SetTexture("_BumpMap",null);m.DisableKeyword("_NORMALMAP");
+    m.SetColor("_BaseColor",new Color(.93f,.91f,.84f));
+    m.SetColor("_EmissionColor",new Color(1f,.91f,.75f)*1.4f);m.EnableKeyword("_EMISSION");
+    m.globalIlluminationFlags=MaterialGlobalIlluminationFlags.BakedEmissive;
+  }
+  AssetDatabase.CreateAsset(m,folder+m.name+".mat");mats[key]=m;
+}
+var root=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Models/Environment/StartLiminal/StartLiminalArchitecture.obj"));
+root.name="StartLiminalArchitecture";
+foreach(var r in root.GetComponentsInChildren<MeshRenderer>()) {
+  r.sharedMaterial=mats[r.name];
+  r.receiveGI=ReceiveGI.Lightmaps;
+  GameObjectUtility.SetStaticEditorFlags(r.gameObject,StaticEditorFlags.ContributeGI|StaticEditorFlags.ReflectionProbeStatic|StaticEditorFlags.BatchingStatic);
+  if(r.name!="Diffuser" && r.name!="Metal") {
+    var mc=r.gameObject.AddComponent<MeshCollider>();mc.sharedMesh=r.GetComponent<MeshFilter>().sharedMesh;
+  }
+}
+var old=GameObject.Find("PrologueGeometry").transform;
+foreach(var key in new[]{"ApproachFloor","ApproachWest","ApproachEast","ApproachBack","CornerBlindWall","ApproachCeiling","CrossFloor","OrdinaryDoorA","OrdinaryDoorB"}) old.Find(key).gameObject.SetActive(false);
+// The existing toilet, landing, exit, discovery triggers and gameplay are untouched.
+var lights=new GameObject("StartVisualLighting");
+foreach(float zz in new float[]{-10,-7.4f,-3.7f,3.6f,8.8f}) {
+  var go=new GameObject("Recessed ceiling light "+zz);go.transform.SetParent(lights.transform);
+  float yy=(zz < -6 || zz > 6)?3.01f:3.51f;
+  go.transform.position=new Vector3(-.35f,yy,zz);go.transform.rotation=Quaternion.Euler(90,0,0);
+  var li=go.AddComponent<Light>();li.type=LightType.Rectangle;li.areaSize=new Vector2(1.08f,.11f);
+  li.lightmapBakeType=LightmapBakeType.Baked;li.color=new Color(1f,.94f,.84f);li.intensity=9.0f;li.bounceIntensity=1.5f;
+}
+foreach(float zz in new float[]{-7.6f,-5.4f}) {
+  var go=new GameObject("Frosted light well "+zz);go.transform.SetParent(lights.transform);
+  go.transform.position=new Vector3(1.77f,1.95f,zz);go.transform.rotation=Quaternion.Euler(0,-90,0);
+  var li=go.AddComponent<Light>();li.type=LightType.Rectangle;li.areaSize=new Vector2(2.0f,1.5f);
+  li.lightmapBakeType=LightmapBakeType.Baked;li.color=new Color(.82f,.94f,1f);li.intensity=2.8f;li.bounceIntensity=1.3f;
+}
+foreach(float zz in new float[]{-3,3}) {
+  foreach(float xx in new float[]{-1.28f,1.28f}) {
+    var go=new GameObject("Concealed plenum wash");go.transform.SetParent(lights.transform);
+    go.transform.position=new Vector3(xx,3.27f,zz);go.transform.rotation=Quaternion.Euler(-90,0,0);
+    var li=go.AddComponent<Light>();li.type=LightType.Rectangle;li.areaSize=new Vector2(.08f,5.6f);
+    li.lightmapBakeType=LightmapBakeType.Baked;li.color=new Color(1f,.91f,.78f);li.intensity=2.5f;li.bounceIntensity=1.3f;
+  }
+}
+var sun=GameObject.Find("Directional Light").GetComponent<Light>();sun.intensity=.12f;sun.color=new Color(.85f,.9f,1f);sun.shadows=LightShadows.Soft;
+var washGo=new GameObject("Concealed corner wall wash");washGo.transform.SetParent(lights.transform);
+washGo.transform.position=new Vector3(.72f,2.94f,10.6f);washGo.transform.rotation=Quaternion.Euler(50,0,0);
+var wash=washGo.AddComponent<Light>();wash.type=LightType.Rectangle;wash.areaSize=new Vector2(.85f,.16f);
+wash.intensity=12;wash.bounceIntensity=1.4f;wash.color=new Color(1f,.96f,.86f);wash.lightmapBakeType=LightmapBakeType.Baked;
+RenderSettings.ambientMode=UnityEngine.Rendering.AmbientMode.Flat;RenderSettings.ambientLight=new Color(.16f,.16f,.15f);RenderSettings.ambientIntensity=1;
+RenderSettings.fog=false;
+var ls=new LightingSettings();ls.name="StartLiminalLighting";ls.bakedGI=true;ls.realtimeGI=false;
+ls.lightmapResolution=20;ls.lightmapMaxSize=1024;ls.directSampleCount=64;ls.indirectSampleCount=128;ls.environmentSampleCount=64;
+ls.maxBounces=4;ls.ao=true;ls.aoMaxDistance=.25f;ls.aoExponentIndirect=.8f;ls.aoExponentDirect=.3f;
+AssetDatabase.CreateAsset(ls,"Assets/Settings/StartLiminalLighting.lighting");Lightmapping.lightingSettings=ls;
+var probeGo=new GameObject("StartVisualLightProbes");probeGo.transform.SetParent(lights.transform);
+var lp=probeGo.AddComponent<LightProbeGroup>();
+var pp=new System.Collections.Generic.List<Vector3>();
+for(float z=-11;z<12;z+=3) foreach(float x in new float[]{-1.3f,1.3f}) foreach(float y in new float[]{.4f,1.7f,2.7f}) pp.Add(new Vector3(x,y,z));lp.probePositions=pp.ToArray();
+var rpgo=new GameObject("StartVisualReflection");rpgo.transform.SetParent(lights.transform);rpgo.transform.position=new Vector3(0,1.5f,-3);
+var rp=rpgo.AddComponent<ReflectionProbe>();rp.mode=UnityEngine.Rendering.ReflectionProbeMode.Baked;rp.size=new Vector3(4.4f,3.2f,20);rp.boxProjection=true;rp.resolution=128;rp.intensity=.8f;
+var cam=GameObject.Find("FirstPersonPlayer").GetComponentInChildren<Camera>();cam.fieldOfView=80;
+PrefabUtility.RecordPrefabInstancePropertyModifications(cam);
+var cameraData=cam.gameObject.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+cameraData.renderPostProcessing=true;cameraData.antialiasing=UnityEngine.Rendering.Universal.AntialiasingMode.SubpixelMorphologicalAntiAliasing;
+cameraData.antialiasingQuality=UnityEngine.Rendering.Universal.AntialiasingQuality.High;
+UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(scene);
+UnityEditor.SceneManagement.EditorSceneManager.SaveScene(scene);
+return new {scene=scene.path,renderers=root.GetComponentsInChildren<Renderer>().Length,lights=lights.GetComponentsInChildren<Light>().Length,fov=cam.fieldOfView};

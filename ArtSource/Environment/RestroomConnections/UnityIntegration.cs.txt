@@ -1,0 +1,74 @@
+// Candidate-only, one-time Editor method body. No runtime or generic editor system.
+if(!Application.dataPath.Replace('\\','/').EndsWith("MyProstateRejectsCapitalism/Assets"))return "Wrong project";
+if(Application.isPlaying||!UnityEngine.SceneManagement.SceneManager.GetActiveScene().path.EndsWith("Act01_RestroomConnectionsValidation.unity"))return "Wrong Editor state";
+if(GameObject.Find("ConnectedArchitecture")!=null)return "Already integrated";
+if(Lightmapping.isRunning)return "Wait for diagnostic bake";
+string folder="Assets/Models/Environment/RestroomConnections/";
+// Clip only the old architecture beyond Z=8; approved approach surfaces/UVs/normals remain unchanged.
+Action<MeshFilter,bool> clip=(mf,keepCornerLamp)=>{
+ var src=mf.sharedMesh;var v=src.vertices;var n=src.normals;var uv=src.uv;var tg=src.tangents;
+ var pp=new System.Collections.Generic.List<Vector3>();var nn=new System.Collections.Generic.List<Vector3>();var uu=new System.Collections.Generic.List<Vector2>();var tt=new System.Collections.Generic.List<Vector4>();
+ var triangles=new System.Collections.Generic.List<int[]>();bool changed=false;
+ Func<int,float[]> record=i=>new float[]{v[i].x,v[i].y,v[i].z,n[i].x,n[i].y,n[i].z,uv.Length>i?uv[i].x:0,uv.Length>i?uv[i].y:0,tg.Length>i?tg[i].x:1,tg.Length>i?tg[i].y:0,tg.Length>i?tg[i].z:0,tg.Length>i?tg[i].w:1};
+ Func<float[],Vector3> world=a=>mf.transform.TransformPoint(new Vector3(a[0],a[1],a[2]));
+ Func<float[],bool> inLamp=a=>{var w=world(a);return w.x>-.97f&&w.x<.27f&&w.y>2.99f&&w.y<3.07f&&w.z>8.68f&&w.z<8.92f;};
+ Action<float[],System.Collections.Generic.List<int>> append=(a,list)=>{list.Add(pp.Count);pp.Add(new Vector3(a[0],a[1],a[2]));nn.Add(new Vector3(a[3],a[4],a[5]).normalized);uu.Add(new Vector2(a[6],a[7]));tt.Add(new Vector4(a[8],a[9],a[10],a[11]));};
+ for(int sub=0;sub<src.subMeshCount;sub++){
+  var srcIndices=src.GetTriangles(sub);var output=new System.Collections.Generic.List<int>();
+  for(int i=0;i<srcIndices.Length;i+=3){
+   var poly=new System.Collections.Generic.List<float[]>{record(srcIndices[i]),record(srcIndices[i+1]),record(srcIndices[i+2])};
+   if(!(keepCornerLamp&&poly.All(inLamp))){
+    var cut=new System.Collections.Generic.List<float[]>();var prev=poly[poly.Count-1];float pd=world(prev).z-8;
+    foreach(var current in poly){float cd=world(current).z-8;bool a=pd<=.000001f,b=cd<=.000001f;
+     if(a!=b){float alpha=pd/(pd-cd);var point=new float[12];for(int j=0;j<12;j++)point[j]=Mathf.Lerp(prev[j],current[j],alpha);cut.Add(point);}
+     if(b)cut.Add(current);else changed=true;prev=current;pd=cd;
+    }poly=cut;
+   }
+   for(int j=1;j+1<poly.Count;j++){append(poly[0],output);append(poly[j],output);append(poly[j+1],output);}
+  }triangles.Add(output.ToArray());
+ }
+ if(!changed)return;
+ if(pp.Count==0){mf.gameObject.SetActive(false);return;}
+ var mesh=new Mesh();mesh.name="ConnectionsClip_"+mf.transform.root.name+"_"+mf.name;
+ mesh.indexFormat=UnityEngine.Rendering.IndexFormat.UInt32;mesh.SetVertices(pp);mesh.SetNormals(nn);mesh.SetUVs(0,uu);mesh.SetTangents(tt);mesh.subMeshCount=triangles.Count;
+ for(int s=0;s<triangles.Count;s++)mesh.SetTriangles(triangles[s],s);mesh.RecalculateBounds();Unwrapping.GenerateSecondaryUVSet(mesh);
+ AssetDatabase.CreateAsset(mesh,folder+mesh.name+".asset");mf.sharedMesh=mesh;var mc=mf.GetComponent<MeshCollider>();if(mc!=null)mc.sharedMesh=mesh;
+};
+foreach(var rootName in new[]{"StartLiminalArchitecture","DiscoveryAdditions"}){
+ var root=GameObject.Find(rootName);foreach(var mf in root.GetComponentsInChildren<MeshFilter>()){
+  if(mf.name=="Porcelain"||mf.name=="Grout")continue;
+  bool lamp=rootName=="StartLiminalArchitecture"&&new[]{"Metal","Reveal","Diffuser"}.Contains(mf.name);clip(mf,lamp);
+ }
+}
+// Remove only the two explicit vertical black strips; retain door seals and luminaire gaskets.
+var shadow=GameObject.Find("PaidToiletEntrance").transform.Find("Shadow").GetComponent<MeshFilter>();
+var old=shadow.sharedMesh;var filtered=UnityEngine.Object.Instantiate(old);filtered.name="EntranceShadow_SealsOnly";var vv=old.vertices;
+for(int sub=0;sub<old.subMeshCount;sub++){
+ var tri=old.GetTriangles(sub);var kept=new System.Collections.Generic.List<int>();
+ for(int i=0;i<tri.Length;i+=3){bool strip=shadow.transform.TransformPoint(vv[tri[i]]).x<11.84f&&shadow.transform.TransformPoint(vv[tri[i+1]]).x<11.84f&&shadow.transform.TransformPoint(vv[tri[i+2]]).x<11.84f;if(!strip){kept.Add(tri[i]);kept.Add(tri[i+1]);kept.Add(tri[i+2]);}}
+ filtered.SetTriangles(kept.ToArray(),sub);
+}
+Unwrapping.GenerateSecondaryUVSet(filtered);AssetDatabase.CreateAsset(filtered,folder+filtered.name+".asset");shadow.sharedMesh=filtered;
+var shadowCollider=shadow.GetComponent<MeshCollider>();if(shadowCollider!=null)shadowCollider.sharedMesh=filtered;
+GameObject.Find("PaidToiletEntrance").transform.Find("Stone").gameObject.SetActive(false);
+var room=GameObject.Find("RestroomArchitecture");foreach(var k in new[]{"Plaster","Stone","Ceiling","Skirting"})room.transform.Find(k).gameObject.SetActive(false);
+var geom=GameObject.Find("PrologueGeometry").transform;foreach(var k in new[]{"CrossSouth","CrossCeiling"})geom.Find(k).gameObject.SetActive(false);
+
+var data=Newtonsoft.Json.Linq.JObject.Parse(System.IO.File.ReadAllText("ArtSource/Environment/RestroomConnections/ConnectedShell.mesh.json"));
+var building=new Mesh();building.name="ConnectedArchitecture";building.indexFormat=UnityEngine.Rendering.IndexFormat.UInt32;
+building.vertices=data["positions"].Select(p=>new Vector3((float)p[0],(float)p[1],(float)p[2])).ToArray();
+building.normals=data["normals"].Select(p=>new Vector3((float)p[0],(float)p[1],(float)p[2])).ToArray();
+building.uv=data["uv"].Select(p=>new Vector2((float)p[0],(float)p[1])).ToArray();
+var groups=data["submeshes"].ToArray();building.subMeshCount=groups.Length;
+var mats=new System.Collections.Generic.List<Material>();
+foreach(var g in groups){
+ string key=(string)g["material"];string matPath=key=="CornerPaint"?"Assets/Materials/StartLiminal/DV_TransitionPaint.mat":key=="CrossPaint"?"Assets/Materials/StartLiminal/DV_LandingPaint.mat":key=="Plaster"?"Assets/Materials/RestroomLiminal/RA_Plaster.mat":key=="Ceiling"?"Assets/Materials/RestroomLiminal/RA_Ceiling.mat":key=="Stone"?"Assets/Materials/StartLiminal/SL_Limestone.mat":key=="Skirting"?"Assets/Materials/StartLiminal/SL_Reveal.mat":key=="CornerMetal"?"Assets/Materials/StartLiminal/SL_Metal.mat":"Assets/Materials/StartLiminal/SL_FrostedGlass.mat";
+ mats.Add(AssetDatabase.LoadAssetAtPath<Material>(matPath));building.SetTriangles(g["triangles"].Select(t=>(int)t).ToArray(),mats.Count-1);
+}
+building.RecalculateTangents();building.RecalculateBounds();Unwrapping.GenerateSecondaryUVSet(building);AssetDatabase.CreateAsset(building,folder+"ConnectedArchitecture.asset");
+var go=new GameObject("ConnectedArchitecture");go.AddComponent<MeshFilter>().sharedMesh=building;var rr=go.AddComponent<MeshRenderer>();rr.sharedMaterials=mats.ToArray();rr.receiveGI=ReceiveGI.Lightmaps;
+go.AddComponent<MeshCollider>().sharedMesh=building;GameObjectUtility.SetStaticEditorFlags(go,StaticEditorFlags.ContributeGI|StaticEditorFlags.ReflectionProbeStatic|StaticEditorFlags.BatchingStatic);
+// Restore original AO parameters after the diagnostic; colour, materials and all lights are unchanged.
+var settings=Lightmapping.lightingSettings;settings.ao=true;settings.aoMaxDistance=.25f;settings.aoExponentDirect=.3f;settings.aoExponentIndirect=.8f;AssetDatabase.SaveAssetIfDirty(settings);
+UnityEditor.SceneManagement.EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+return new{scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene().path,vertices=building.vertexCount,submeshes=building.subMeshCount,continuousDatum=1.05f};

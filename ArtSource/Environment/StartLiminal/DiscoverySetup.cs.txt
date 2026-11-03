@@ -1,0 +1,57 @@
+// Candidate-only in-memory Unity Editor integration. No runtime systems.
+if(Application.isPlaying || !UnityEngine.SceneManagement.SceneManager.GetActiveScene().path.EndsWith("Act01_DiscoveryVisualValidation.unity")) return "Wrong state";
+if(GameObject.Find("DiscoveryAdditions")!=null)return "Already integrated";
+AssetDatabase.Refresh();
+var path="Assets/Models/Environment/StartLiminal/DiscoveryAdditions.obj";
+var mi=(ModelImporter)AssetImporter.GetAtPath(path);mi.globalScale=1;mi.materialImportMode=ModelImporterMaterialImportMode.None;mi.generateSecondaryUV=true;mi.importNormals=ModelImporterNormals.Import;mi.SaveAndReimport();
+var mats=new System.Collections.Generic.Dictionary<string,Material>();
+foreach(var k in new[]{"Paint","Limestone","Porcelain","Reveal","Metal","Diffuser","FrostedGlass"})mats[k]=AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/StartLiminal/SL_"+k+".mat");
+foreach(var k in new[]{"TransitionPaint","PortalStone","LandingPaint"}){
+ var m=new Material(mats[k=="PortalStone"?"Limestone":"Paint"]);m.name="DV_"+k;
+ m.SetColor("_BaseColor",k=="LandingPaint"?new Color(1f,.91f,.76f):k=="TransitionPaint"?new Color(.90f,.94f,.96f):new Color(.92f,.95f,.95f));
+ AssetDatabase.CreateAsset(m,"Assets/Materials/StartLiminal/"+m.name+".mat");mats[k]=m;
+}
+var root=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(path));root.name="DiscoveryAdditions";
+foreach(var rr in root.GetComponentsInChildren<MeshRenderer>()){
+ rr.sharedMaterial=mats[rr.name];rr.receiveGI=ReceiveGI.Lightmaps;
+ GameObjectUtility.SetStaticEditorFlags(rr.gameObject,StaticEditorFlags.ContributeGI|StaticEditorFlags.ReflectionProbeStatic|StaticEditorFlags.BatchingStatic);
+ if(rr.name!="Diffuser"&&rr.name!="Metal"&&rr.name!="FrostedGlass"){var mc=rr.gameObject.AddComponent<MeshCollider>();mc.sharedMesh=rr.GetComponent<MeshFilter>().sharedMesh;}
+}
+var old=GameObject.Find("PrologueGeometry").transform;
+foreach(var k in new[]{"LandingSouth","LandingWestSouth","LandingWestNorth","ToiletWallSouth","ToiletWallNorth"}){
+ var t=old.Find(k);t.position=new Vector3(t.position.x,2.4f,t.position.z);t.localScale=new Vector3(t.localScale.x,4.8f,t.localScale.z);
+}
+var north=old.Find("LandingNorth");north.position=new Vector3(9.1f,1.575f,13.3f);north.localScale=new Vector3(5.8f,3.15f,.2f);
+var ceil=old.Find("LandingCeiling");ceil.position=new Vector3(9.1f,4.90f,10.6f);
+var lintel=old.Find("ToiletWallLintel");lintel.position=new Vector3(12.1f,3.65f,10.6f);lintel.localScale=new Vector3(.2f,2.3f,2.8f);
+var cross=old.Find("CrossSouth");cross.position=new Vector3(3.8f,1.7f,9.1f);cross.localScale=new Vector3(4.8f,3.4f,.2f);
+old.Find("CrossCeiling").position=new Vector3(3.8f,3.5f,10.6f);
+foreach(var k in new[]{"LandingSouth","LandingNorth","LandingWestSouth","LandingWestNorth","ToiletWallSouth","ToiletWallNorth","ToiletWallLintel","LandingCeiling","CrossSouth","CrossCeiling"}){
+ var go=old.Find(k).gameObject;go.GetComponent<Renderer>().sharedMaterial=mats[k.EndsWith("Ceiling")?"Paint":"LandingPaint"];
+ GameObjectUtility.SetStaticEditorFlags(go,StaticEditorFlags.ContributeGI|StaticEditorFlags.ReflectionProbeStatic);
+}
+old.Find("ToiletLandingFloor").GetComponent<Renderer>().enabled=false;
+var lr=GameObject.Find("StartVisualLighting");
+foreach(var li in lr.GetComponentsInChildren<Light>()){
+ if((li.name.StartsWith("Recessed")&&li.transform.position.z>0&&li.transform.position.z<7)||(li.name=="Concealed plenum wash"&&li.transform.position.z>0))li.gameObject.SetActive(false);
+ if(li.name=="Concealed corner wall wash")li.intensity=7;
+}
+var lighting=new GameObject("DiscoveryLighting");
+Action<string,Vector3,Vector3,Vector2,Color,float> area=(name,pos,rot,size,color,power)=>{
+ var go=new GameObject(name);go.transform.SetParent(lighting.transform);go.transform.position=pos;go.transform.rotation=Quaternion.Euler(rot);
+ var li=go.AddComponent<Light>();li.type=LightType.Rectangle;li.lightmapBakeType=LightmapBakeType.Baked;li.areaSize=size;li.color=color;li.intensity=power;li.bounceIntensity=1.35f;
+};
+area("Offset opening wash",new Vector3(-.85f,2.40f,-1.05f),new Vector3(90,0,0),new Vector2(1.5f,.06f),new Color(1,.93f,.83f),7);
+foreach(float z in new float[]{1.4f,5.6f})area("Compressed passage light",new Vector3(-.85f,2.39f,z),new Vector3(90,0,0),new Vector2(.09f,1.1f),new Color(.84f,.93f,1f),5);
+area("Turn light aperture",new Vector3(0,2.65f,11.70f),new Vector3(0,180,0),new Vector2(3.1f,.55f),new Color(1f,.89f,.69f),3.4f);
+area("Landing clerestory",new Vector3(9.25f,3.8f,13.08f),new Vector3(0,180,0),new Vector2(4.4f,1.15f),new Color(1f,.87f,.66f),5);
+foreach(float x in new float[]{7.6f,10.6f})area("High landing ceiling slot",new Vector3(x,4.72f,10.6f),new Vector3(90,0,0),new Vector2(.10f,2.3f),new Color(1f,.92f,.78f),12);
+var settings=UnityEngine.Object.Instantiate(Lightmapping.lightingSettings);settings.name="DiscoveryVisualLighting";settings.indirectSampleCount=192;settings.directSampleCount=64;
+AssetDatabase.CreateAsset(settings,"Assets/Settings/DiscoveryVisualLighting.lighting");Lightmapping.lightingSettings=settings;
+var probes=new GameObject("DiscoveryLightProbes").AddComponent<LightProbeGroup>();probes.transform.SetParent(lighting.transform);
+var pp=new System.Collections.Generic.List<Vector3>();foreach(float x in new float[]{6.7f,9,11.5f})foreach(float y in new float[]{.5f,1.7f,3,4.3f})foreach(float z in new float[]{8.5f,10.6f,12.7f})pp.Add(new Vector3(x,y,z));probes.probePositions=pp.ToArray();
+var rpgo=new GameObject("DiscoveryLandingReflection");rpgo.transform.SetParent(lighting.transform);rpgo.transform.position=new Vector3(9.1f,2.3f,10.6f);
+var rp=rpgo.AddComponent<ReflectionProbe>();rp.mode=UnityEngine.Rendering.ReflectionProbeMode.Baked;rp.boxProjection=true;rp.size=new Vector3(6,4.8f,5.4f);rp.resolution=128;
+GameObject.Find("FirstPersonPlayer").GetComponentInChildren<Camera>().fieldOfView=80;
+UnityEditor.SceneManagement.EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+return new {scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene().path,addedMeshGroups=root.GetComponentsInChildren<Renderer>().Length,openingWidth=1.92f,lowCeiling=2.45f,landingCeiling=4.8f};

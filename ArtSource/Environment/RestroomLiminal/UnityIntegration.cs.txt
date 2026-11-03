@@ -1,0 +1,90 @@
+// One-time, in-memory Unity Editor integration. No runtime script or global prefab edit.
+if(Application.isPlaying || !UnityEngine.SceneManagement.SceneManager.GetActiveScene().path.EndsWith("Act01_RestroomArtValidation.unity"))return "Wrong Editor state";
+if(GameObject.Find("RestroomArchitecture")!=null)return "Already integrated";
+AssetDatabase.Refresh();
+string folder="Assets/Models/Environment/RestroomLiminal/";
+foreach(var file in new[]{"RestroomArchitecture.obj","PaidToiletEntrance.obj"}){
+ var imp=(ModelImporter)AssetImporter.GetAtPath(folder+file);imp.globalScale=1;imp.materialImportMode=ModelImporterMaterialImportMode.None;
+ imp.generateSecondaryUV=true;imp.importNormals=ModelImporterNormals.Import;imp.SaveAndReimport();
+}
+var mats=new System.Collections.Generic.Dictionary<string,Material>();
+Func<string,Material> oldMat=k=>AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/StartLiminal/SL_"+k+".mat");
+mats["Stone"]=oldMat("Limestone");mats["Metal"]=oldMat("Metal");mats["Porcelain"]=oldMat("Porcelain");mats["Threshold"]=oldMat("Limestone");
+mats["Skirting"]=oldMat("Reveal");mats["Shadow"]=oldMat("Reveal");mats["Diffuser"]=oldMat("Diffuser");
+foreach(var k in new[]{"Plaster","Ceiling","Glass","DoorLeaf","ExitLeaf","Graphite","Screen","Reader","Icon","PricePlate","Indicator"}){
+ var m=new Material(oldMat(k=="Glass"?"FrostedGlass":"Paint"));m.name="RA_"+k;
+ if(k=="Plaster"||k=="Ceiling")m.SetColor("_BaseColor",new Color(.99f,.99f,.97f));
+ if(k=="Glass"){
+   m.SetColor("_BaseColor",new Color(1f,.99f,.96f));m.SetColor("_EmissionColor",new Color(.18f,.20f,.19f));m.EnableKeyword("_EMISSION");
+   m.globalIlluminationFlags=MaterialGlobalIlluminationFlags.BakedEmissive;
+ }
+ if(k=="DoorLeaf"||k=="ExitLeaf"||k=="Graphite"||k=="Reader"){
+   m.SetTexture("_MetallicGlossMap",null);m.DisableKeyword("_METALLICSPECGLOSSMAP");m.SetFloat("_Metallic",0);
+   m.SetFloat("_Smoothness",k=="DoorLeaf"?.38f:.27f);
+   m.SetColor("_BaseColor",k=="DoorLeaf"?new Color(.50f,.59f,.60f):k=="ExitLeaf"?new Color(.83f,.85f,.83f):new Color(.12f,.14f,.15f));
+ }
+ if(k=="Icon"||k=="Screen"||k=="Indicator"){
+   m.SetTexture("_BaseMap",null);m.SetTexture("_BumpMap",null);m.DisableKeyword("_NORMALMAP");m.SetTexture("_MetallicGlossMap",null);m.DisableKeyword("_METALLICSPECGLOSSMAP");
+   m.SetFloat("_Metallic",0);m.SetFloat("_Smoothness",.3f);m.SetColor("_BaseColor",k=="Icon"?new Color(.93f,.94f,.90f):new Color(.04f,.07f,.08f));
+   if(k!="Icon"){m.EnableKeyword("_EMISSION");m.SetColor("_EmissionColor",k=="Indicator"?new Color(.12f,.35f,.20f):new Color(.07f,.13f,.14f));}
+ }
+ if(k=="PricePlate")m.SetColor("_BaseColor",new Color(1f,1f,.98f));
+ AssetDatabase.CreateAsset(m,"Assets/Materials/RestroomLiminal/"+m.name+".mat");mats[k]=m;
+}
+// Only the original room portion of the additive meshes is masked. Pre-corner triangles/UVs are copied verbatim.
+var oldAdd=GameObject.Find("DiscoveryAdditions");
+oldAdd.transform.Find("LandingPaint").gameObject.SetActive(false);
+foreach(var k in new[]{"Metal","FrostedGlass","Diffuser","Reveal"}){
+ var mf=oldAdd.transform.Find(k).GetComponent<MeshFilter>();var original=mf.sharedMesh;var mesh=UnityEngine.Object.Instantiate(original);mesh.name="ApproachPreserved_"+k;
+ var vertices=mesh.vertices;
+ for(int s=0;s<mesh.subMeshCount;s++){
+   var tris=mesh.GetTriangles(s);var keep=new System.Collections.Generic.List<int>();
+   for(int i=0;i<tris.Length;i+=3){if(mf.transform.TransformPoint(vertices[tris[i]]).x<6 && mf.transform.TransformPoint(vertices[tris[i+1]]).x<6 && mf.transform.TransformPoint(vertices[tris[i+2]]).x<6){keep.Add(tris[i]);keep.Add(tris[i+1]);keep.Add(tris[i+2]);}}
+   mesh.SetTriangles(keep.ToArray(),s);
+ }
+ AssetDatabase.CreateAsset(mesh,folder+mesh.name+".asset");mf.sharedMesh=mesh;var mc=mf.GetComponent<MeshCollider>();if(mc!=null)mc.sharedMesh=mesh;
+}
+var geometry=GameObject.Find("PrologueGeometry").transform;
+foreach(var k in new[]{"LandingSouth","LandingNorth","LandingWestSouth","LandingWestNorth","LandingCeiling","ToiletWallSouth","ToiletWallNorth","ToiletWallLintel"})geometry.Find(k).gameObject.SetActive(false);
+geometry.Find("ConnectionDoorSign").gameObject.SetActive(false);
+var next=geometry.Find("NextDoor");next.GetComponent<Renderer>().enabled=false;
+next.position=new Vector3(next.position.x,next.position.y,13.26f);
+next.GetComponent<BoxCollider>().size=new Vector3(1.18f/1.25f,2.15f/2.2f,.045f/.15f);
+var paid=GameObject.Find("PaidToilet");var font=paid.transform.Find("FeeSign").GetComponent<TMPro.TMP_Text>().font;
+foreach(var k in new[]{"Back","Left","Right","Roof","Door","FeeSignBoard","FeeSign"})paid.transform.Find(k).gameObject.SetActive(false);
+var room=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(folder+"RestroomArchitecture.obj"));room.name="RestroomArchitecture";
+var entry=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(folder+"PaidToiletEntrance.obj"));entry.name="PaidToiletEntrance";
+entry.transform.SetParent(paid.transform,false);entry.transform.localPosition=Vector3.zero;entry.transform.localRotation=Quaternion.identity;entry.transform.localScale=Vector3.one;
+foreach(var model in new[]{room,entry})foreach(var r in model.GetComponentsInChildren<MeshRenderer>()){
+ r.sharedMaterial=mats[r.name];r.receiveGI=ReceiveGI.Lightmaps;
+ GameObjectUtility.SetStaticEditorFlags(r.gameObject,StaticEditorFlags.ContributeGI|StaticEditorFlags.ReflectionProbeStatic|StaticEditorFlags.BatchingStatic);
+ bool collider=model==room?r.name!="ExitLeaf"&&r.name!="Metal"&&r.name!="Diffuser"&&r.name!="Shadow":new[]{"Stone","DoorLeaf","Metal","Graphite","Threshold","Porcelain"}.Contains(r.name);
+ if(collider){var mc=r.gameObject.AddComponent<MeshCollider>();mc.sharedMesh=r.GetComponent<MeshFilter>().sharedMesh;}
+}
+// World-space facility signs. The subtitle canvas and its controller are not changed.
+Action<string,string,Vector3,Vector2,float,Color,Transform> text=(name,words,pos,size,fontSize,color,parent)=>{
+ var go=new GameObject(name);go.transform.SetParent(parent);go.transform.position=pos;go.transform.rotation=Quaternion.Euler(0,90,0);
+ var t=go.AddComponent<TMPro.TextMeshPro>();t.font=font;t.text=words;t.fontSize=fontSize;t.enableAutoSizing=true;t.fontSizeMin=fontSize*.65f;t.fontSizeMax=fontSize;
+ t.color=color;t.alignment=TMPro.TextAlignmentOptions.Center;t.rectTransform.sizeDelta=size;t.margin=Vector4.zero;t.enableWordWrapping=false;t.ForceMeshUpdate();
+};
+text("SmallFeePlateText","이용료\n500원",new Vector3(11.819f,1.805f,9.825f),new Vector2(.278f,.17f),.84f,new Color(.10f,.12f,.12f),entry.transform);
+text("RestroomPictogramCaption","화장실",new Vector3(11.814f,2.35f,10.65f),new Vector2(.38f,.065f),.55f,new Color(.9f,.92f,.89f),entry.transform);
+text("SmallConnectionDoorLabel","연결 통로",new Vector3(8.2f,2.45f,13.173f),new Vector2(.38f,.105f),.55f,new Color(.9f,.92f,.89f),room.transform);
+GameObject.Find("SmallConnectionDoorLabel").transform.rotation=Quaternion.identity;
+// Keep every pre-corner light as authored. Replace only the three original room lights.
+foreach(var l in GameObject.Find("DiscoveryLighting").GetComponentsInChildren<Light>())if(l.name=="Landing clerestory"||l.name=="High landing ceiling slot")l.gameObject.SetActive(false);
+var lighting=new GameObject("RestroomArtLighting");
+Action<string,Vector3,Vector3,Vector2,Color,float> area=(name,pos,rot,size,color,power)=>{
+ var go=new GameObject(name);go.transform.SetParent(lighting.transform);go.transform.position=pos;go.transform.rotation=Quaternion.Euler(rot);
+ var l=go.AddComponent<Light>();l.type=LightType.Rectangle;l.areaSize=size;l.lightmapBakeType=LightmapBakeType.Baked;l.color=color;l.intensity=power;l.bounceIntensity=1.4f;
+};
+area("North clerestory daylight",new Vector3(9.25f,3.8f,13.10f),new Vector3(0,180,0),new Vector2(4.4f,1.1f),new Color(.93f,.97f,1f),3.8f);
+area("Entry transom",new Vector3(12.10f,3.52f,10.60f),new Vector3(0,-90,0),new Vector2(2.05f,1.40f),new Color(1f,.96f,.88f),4.5f);
+area("High ceiling slot",new Vector3(8.35f,4.73f,10.6f),new Vector3(90,0,0),new Vector2(.10f,2.4f),new Color(1f,.97f,.90f),12);
+area("Vertical pier wash",new Vector3(11.55f,4.39f,10.6f),new Vector3(60,-90,0),new Vector2(2f,.10f),new Color(1f,.96f,.90f),9);
+area("Door task light",new Vector3(12f,2.20f,10.65f),new Vector3(90,0,0),new Vector2(.07f,.98f),new Color(1f,.97f,.91f),3);
+var probe=GameObject.Find("DiscoveryLandingReflection").GetComponent<ReflectionProbe>();probe.resolution=256;
+var settings=UnityEngine.Object.Instantiate(Lightmapping.lightingSettings);settings.name="RestroomArtLighting";settings.indirectSampleCount=256;
+AssetDatabase.CreateAsset(settings,"Assets/Settings/RestroomArtLighting.lighting");Lightmapping.lightingSettings=settings;
+UnityEditor.SceneManagement.EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+return new{scene=UnityEngine.SceneManagement.SceneManager.GetActiveScene().path,entranceBounds=entry.GetComponentsInChildren<Renderer>().Select(r=>new{name=r.name,center=r.bounds.center.ToString()}).ToArray()};
