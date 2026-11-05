@@ -1,0 +1,41 @@
+{
+  "art_z": [
+    -1,
+    17
+  ],
+  "materials": [
+    "Metal",
+    "Gasket",
+    "Diffuser",
+    "HPL",
+    "PaintLower",
+    "Felt",
+    "Paint",
+    "Glass",
+    "FrostBand",
+    "Cabinet",
+    "ExteriorGlass",
+    "Red",
+    "Paper",
+    "Grout",
+    "Floor",
+    "CeilingGap",
+    "Ceiling",
+    "Skirting",
+    "Sole",
+    "SlipperWhite",
+    "SlipperNavy",
+    "Desk",
+    "BoardGreen",
+    "Curtain",
+    "Paving",
+    "Court",
+    "CourtLine",
+    "OutdoorPaint",
+    "OutdoorReveal",
+    "OutdoorGlass",
+    "OutdoorMetal"
+  ],
+  "faces": 27094,
+  "replacement_renderers": 186
+}
