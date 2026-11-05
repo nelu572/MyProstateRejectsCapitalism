@@ -7,7 +7,7 @@ import json, math
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
-OUT = ROOT / 'Assets/Models/Environment/ClassroomWake'
+OUT = ROOT / 'Assets/Models/Environment/Prologue/ClassroomWake'
 OUT.mkdir(parents=True, exist_ok=True)
 old = HERE.parent / 'KoreanSchoolArt02/build_school_rhythm.py'
 source = old.read_text(encoding='utf-8')

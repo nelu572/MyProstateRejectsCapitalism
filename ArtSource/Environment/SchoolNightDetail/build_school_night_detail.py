@@ -5,7 +5,7 @@ from pathlib import Path
 import ast, math
 HERE=Path(__file__).resolve().parent
 ROOT=HERE.parents[2]
-OUT=ROOT/'Assets/Models/Environment/SchoolNightDetail'
+OUT=ROOT/'Assets/Models/Environment/Prologue/SchoolNightDetail'
 OUT.mkdir(parents=True,exist_ok=True)
 env={'math':math,'groups':{}}
 tree=ast.parse((HERE.parent/'StartLiminal/build_start_visual.py').read_text(encoding='utf-8'))

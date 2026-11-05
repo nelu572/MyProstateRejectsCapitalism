@@ -10,7 +10,7 @@ import math
 HERE=Path(__file__).resolve().parent
 ROOT=HERE.parents[2]
 PREV=HERE.parent/'KoreanSchoolArt01'
-OUT=ROOT/'Assets/Models/Environment/KoreanSchoolArt02'
+OUT=ROOT/'Assets/Models/Environment/Prologue/KoreanSchoolArt02'
 OUT.mkdir(parents=True,exist_ok=True)
 env={'math':math,'groups':{}}
 tree=ast.parse((HERE.parent/'StartLiminal/build_start_visual.py').read_text(encoding='utf-8'))

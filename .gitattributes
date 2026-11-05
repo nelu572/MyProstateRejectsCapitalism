@@ -1,5 +1,6 @@
 # New production and experiment assets; existing Git history is not migrated.
 /Assets/Fonts/*.asset filter=lfs diff=lfs merge=lfs -text
+/Assets/Fonts/Prologue/*.asset filter=lfs diff=lfs merge=lfs -text
 /Assets/Models/Environment/**/*.fbx filter=lfs diff=lfs merge=lfs -text
 /Assets/Models/Environment/**/*.obj filter=lfs diff=lfs merge=lfs -text
 /Assets/Textures/**/*.png filter=lfs diff=lfs merge=lfs -text

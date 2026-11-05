@@ -12,7 +12,7 @@ import zlib
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
-OUT = ROOT / 'Assets/Models/Environment/KoreanSchoolArt01'
+OUT = ROOT / 'Assets/Models/Environment/Prologue/KoreanSchoolArt01'
 OUT.mkdir(parents=True, exist_ok=True)
 tree = ast.parse((HERE.parent / 'StartLiminal/build_start_visual.py').read_text(encoding='utf-8'))
 env = {'math': math, 'groups': {}, 'struct': struct, 'zlib': zlib}
@@ -155,7 +155,7 @@ env['write_obj'](path)
 print('School art render mesh:',path,'faces',sum(len(f) for f in env['groups'].values()))
 
 # Original authored light ash laminate grain, deliberately subtle rather than distressed.
-texdir=ROOT/'Assets/Textures/Environment/KoreanSchoolArt01'
+texdir=ROOT/'Assets/Textures/Environment/Prologue/KoreanSchoolArt01'
 texdir.mkdir(parents=True,exist_ok=True)
 rng=random.Random(431)
 pixels=bytearray()
