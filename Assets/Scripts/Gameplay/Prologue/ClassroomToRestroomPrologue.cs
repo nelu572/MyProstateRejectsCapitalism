@@ -24,6 +24,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
         private PlayerInteractor interactor;
         private float beganAt, freeSeconds, lineUntil, quietUntil;
         [SerializeField] private Transform restroomSign;
+        [SerializeField] private ActOneFirstEncounter firstEncounter;
         private bool firstThought, observation, purpose, wandered;
         private float enteredAt, corridorTravel;
         private Vector3 previousPosition;
@@ -88,6 +89,14 @@ namespace MyProstateRejectsCapitalism.Gameplay
             }
 
             ClearFinishedLine();
+            // Payment takes over the subtitle and hint immediately; route cues never queue behind it.
+            if (firstEncounter != null && firstEncounter.HasBegun)
+            {
+                subtitle.text = string.Empty;
+                hint.text = string.Empty;
+                lineUntil = 0f;
+                return;
+            }
             if (!CorridorEntered && (door.IsOpening || door.IsOpen))
             {
                 observation = true;
@@ -95,7 +104,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
                 lineUntil = 0f;
                 quietUntil = Time.time + 8f;
             }
-            hint.text = player.CanControl && interactor.CurrentTarget == door && !door.IsOpen && !door.IsOpening
+            hint.text = player.CanControl && ReferenceEquals(interactor.CurrentTarget, door) && !door.IsOpen && !door.IsOpening
                 ? "E — " + door.InteractionPrompt : string.Empty;
             if (!player.CanControl)
                 return;

@@ -111,8 +111,9 @@ namespace MyProstateRejectsCapitalism.Gameplay
         }
 
         private bool CanTalk => IsUnlocked && !talking && !restoreInteractor
-            && !dialogue.IsPlaying && !firstEncounter.IsPaying && !flow.IsTransitioning
-            && !flow.IsEndingVisible && player.CanControl && Time.unscaledTime >= availableAfter;
+            && !dialogue.IsPlaying && !firstEncounter.IsPaying
+            && (flow == null || (!flow.IsTransitioning && !flow.IsEndingVisible))
+            && player.CanControl && Time.unscaledTime >= availableAfter;
 
         private void LateUpdate()
         {
