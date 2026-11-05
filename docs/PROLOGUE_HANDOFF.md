@@ -6,11 +6,11 @@
 
 교실 기상 → 빈 교실 관찰 → 화장실 목적 → E키 미닫이문 → 밤 복도 → 측면 화장실 표식 → 작은 진입부의 문·500원 요금판·단말기까지다. 결제·전립선 첫 만남·ACT 연결은 아직 없다. 현재 시안의 최종 디자인 승인을 뜻하지 않는다.
 
-작은 수정은 이 씬과 Git 체크포인트를 사용한다. 매번 Validation 씬을 복제하지 않는다. 별도 씬은 실제 비교 실험이 필요할 때만 만든다.
+기준 씬 수정·새 씬 생성·정리 절차는 [WORKFLOW.md](WORKFLOW.md)를 따른다.
 
 ## 안전과 복구
 
-- 저장소 `C:/unity/MyProstateRejectsCapitalism`, 브랜치 `main`. 정리 전 보존 커밋: **`611921b`**. 최신 정리 커밋은 `git log -1`로 확인한다. 두 커밋은 로컬 개발 체크포인트이며 Push하지 않았다.
+- 저장소 `C:/unity/MyProstateRejectsCapitalism`, 브랜치 `main`. 누적 구현 체크포인트 **`611921b`**, 역할별 정리 체크포인트 **`e37fa5c`**. 삭제한 과거 씬과 전용 에셋은 `e37fa5c`에서 Git/LFS로 복구할 수 있다. 최신 정리 커밋은 `git log -1`로 확인한다. 모두 로컬 개발 체크포인트다.
 - 작업 전 `git status`, 현재 씬과 Unity MCP 프로젝트 경로를 확인한다. 이번 대상은 `MyProstateRejectsCapitalism@96a5e64b`, stdio 6400이었다.
 - Editor 종료·재시작·종료 차단 우회 금지. 연결 문제는 기존 Editor를 유지하며 복구한다. 세부 규칙은 [AGENTS.md](../AGENTS.md), [WORKFLOW.md](WORKFLOW.md)를 따른다.
 - 빌드 시작 씬·순서는 변경하지 않았다. 시작은 `Assets/Scenes/VerticalSlice/Slice_Act01_PaidToilet.unity`다. 현재 프롤로그는 Editor에서 직접 연다.
@@ -46,7 +46,6 @@ _UI                                 # 기존 자막·힌트·기상 페이드 Ca
 | --- | --- |
 | 현재 기상·독백 조건 | `Assets/Scripts/Gameplay/Prologue/ClassroomToRestroomPrologue.cs` |
 | 기존 E키 문 | `Assets/Scripts/Gameplay/Prologue/ClassroomSlidingDoor.cs` |
-| 보관 씬용 예전 독백 코드 | 같은 폴더의 `ClassroomWakePrologue.cs`, `PrologueBlockoutThoughts.cs` |
 | 게임용 / 기반 플레이어 | `Assets/Prefabs/Characters/FirstPersonPlayer_Gameplay.prefab`, `FirstPersonPlayer.prefab` |
 | 학교 모델 | `Assets/Models/Environment/Prologue/` 아래 기존 모델별 폴더 |
 | 프롤로그 재질·원경 셰이더 | `Assets/Materials/Prologue/` — `SchoolDarkContinuation/SoftNightSurface.shader` 포함 |
@@ -66,25 +65,29 @@ _UI                                 # 기존 자막·힌트·기상 페이드 Ca
 - 현재 씬의 배경은 이전 작업에서 복도 단면 안으로 제한한 상태다. 창밖에 곡면 외곽이 드러나지 않도록 유지한다.
 - 독백은 관찰 시 `……다 갔네.`, 퇴실 의도 시 `화장실만 갔다 가자.`, 표식을 못 본 채 복도에서 40초·수평 16m 이상 탐색할 때만 `여기쯤 아니었나.`다. 빠른 진행에서는 앞 대사를 폐기하며 문 열림·표식 발견 직후는 무자막이다.
 
-## 보관과 기능 참고
+## 유지한 씬과 미통합 제작물
 
-- 과거 프롤로그 22개 씬: **`Assets/Scenes/_Development/_Archive/Prologue/`**. 파일명·GUID·각 후보의 의존 에셋을 보존했다.
-- 기존 첫 만남·자유 대화 참고: `Assets/Scenes/_Development/Act01_IntegratedValidation.unity`.
-- 전체 진행 기반: `Assets/Scenes/VerticalSlice/`의 ACT 1~5. 이름·연결·빌드 목록을 유지했다. 현재 프롤로그와 새로 연결하지 않았다.
+프로젝트 씬은 54개에서 10개로 줄였다. 프롤로그 외 유지 위치는 다음과 같다.
 
-## 정리·검증 자료와 보류
+- ACT 1 개발 기준: `Assets/Scenes/_Development/Act01_IntegratedValidation.unity`. 결제·첫 만남·자유 대화의 유효 구현이며 현재 프롤로그와 미연결이다.
+- 전체 진행 기반 및 ACT 2~5 기준: `Assets/Scenes/VerticalSlice/`의 5개 씬. 파일명·순차 전환·엔딩·빌드 순서를 유지했다.
+- 독립 참고 2개: `_Development/FirstPersonFeelValidation.unity`(조작감·입력잠금 코스), `FullMapBlockoutV2.unity`(연속 전체 동선).
+- `_Development/SampleScene.unity`: 현재 빌드 마지막 등록 때문에 보존했다. 개발 기준으로 사용하지 않는다.
+- Lobby·Terminal·PaidToiletEntranceMinimal의 Prefab·모델·텍스처와 `ArtSource/` 제작 원본은 미통합 작업으로 남겼다.
 
-현재 씬에서 교체된 비활성 독백 컴포넌트 2개, 비활성 준비물 텍스트, 미참조 구형 트리거만 제거했다. 외부 참조가 없는 `Assets/Editor/TutorialInfo/` 템플릿을 정리했다. 캡처 복사본 15개는 동일 해시와 복구 ZIP을 검증한 뒤 제거했으며 원본·최신 캡처·실험별 차이·제작 원본은 보존했다.
+과거 프롤로그 22개와 ACT별 통합 완료 검증·블록아웃 등 총 44개 씬은 삭제했다. `_Archive`에는 다시 복사하지 않았다. 사용이 끝난 전용 폰트·재질·프로필·베이크 데이터와 구형 독백 코드도 역참조 확인 후 제거했다. 공용 URP·Input·TMP Resources와 현재 씬의 의존 에셋은 유지했다.
 
-정리 검증: 교실·입구 화면은 RGB 픽셀 동일, 복도는 1픽셀에서 1단계 차이였다. 유지한 3,427개 객체의 상태·직렬화 참조와 215개 이동 GUID를 보존했고, 54개 씬에서 누락 GUID가 없었다. 정리 후 한 번의 연속 Play에서 기상 도중 건너뛰기·조작권 반환·문·발견·독백·이동·점프·충돌을 확인했으며 새 경고·오류는 0건이었다.
+`Scenes/_Development/Act01_AtmosphereValidation/`의 남은 ReflectionProbe 2개는 ACT 1 통합본의 공유 의존이므로 폴더 이름만 보고 삭제하지 않는다. 현재 프롤로그 Hierarchy·Prefab과 유지한 모든 씬의 내용은 이번 전체 정리에서 변경하지 않았다.
 
-정리 전후 캡처·객체 상태·의존 GUID·삭제 매핑과 복구 ZIP은 `Logs/PrologueCleanup_20261105/`에 있다. Logs는 Git 제외이며, 다른 PC로 옮길 때 Git만으로 보존된다고 생각하지 않는다. LFS 객체도 로컬에 보존해야 한다.
+## 검증 자료와 보류
 
-다음은 의도를 확정하지 않아 유지했다.
+이전 프롤로그 정리 자료는 `Logs/PrologueCleanup_20261105/`, 이번 의존·삭제 매핑과 대표 화면은 `Logs/ProjectCleanup_20261105/`에 있다. Logs는 Git 제외다. 동일 내용의 캡처·JSON·ZIP만 유지 복사본과 SHA-256 매핑을 확인한 뒤 줄였고, 고유 캡처·최신 검토본·진행 중 로그는 보존했다.
 
-- 미커밋 설정: `ProjectSettings/ShaderGraphSettings.asset`, `URPProjectSettings.asset`; 미추적 `SceneTemplateSettings.json`.
-- 미추적 `Assets/Lightmaps/StartVisualReflection_ReflectionProbe.exr`와 `.meta`·폴더 `.meta`: 보관 씬 의존에서도 사용을 확인하지 못했으나 삭제 보류.
-- 미참조 Sky 재질, 꺼진 과거 구조, `.blend1`, 서로 다른 시점의 백업·실패 로그: 이름이나 미참조만으로 삭제하지 않았다.
+- 사용자 미커밋 설정: `ProjectSettings/ShaderGraphSettings.asset`, `URPProjectSettings.asset`; 미추적 `SceneTemplateSettings.json`.
+- 미추적 `Assets/Lightmaps/StartVisualReflection_ReflectionProbe.exr`와 `.meta`·폴더 `.meta`: 의도 미확인으로 삭제 보류.
+- 고유 제작 원본·`.blend1`·서로 다른 백업 및 실패 기록, 유지 씬의 비활성 구조는 보존했다.
+- `ClassroomToRestroomPrologue.cs:98`의 CS0252 비교식 경고는 기존 코드에 있던 경고다. 이번 정리에서 게임 로직을 수정하지 않았다.
+- 공용 `PC_Renderer`·`DefaultVolumeProfile`의 기존 미해결 GUID 11개는 삭제 대상과 무관하며 설정을 보존했다. ACT 1 재진입 중 기존 폰트의 임포터 경고 1회도 기록했다. 유지한 에셋의 파일 내용은 같고 최종 콘솔 오류·경고는 0건이었다.
 
 ## 미완료
 
