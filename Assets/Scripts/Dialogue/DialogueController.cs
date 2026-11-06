@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Text;
 using MyProstateRejectsCapitalism.Characters;
 using TMPro;
 using UnityEngine;
@@ -11,20 +13,38 @@ namespace MyProstateRejectsCapitalism.Dialogue
         [SerializeField] private GameObject dialoguePanel;
         [SerializeField] private TMP_Text speakerLabel;
         [SerializeField] private TMP_Text dialogueLabel;
+        [SerializeField, Min(1f)] private float charactersPerSecond = 55f;
+        [SerializeField] private bool centerVisibleTyping;
+        [SerializeField] private bool wordWrappedSubtitles;
+        private struct TypingLine
+        {
+            public float min, max, offset;
+            public bool initialized;
+        }
+
+        private TypingLine[] typingLines;
+        private bool centeringNeedsUpdate;
+        private int centeringFrame = -1;
 
         private DialogueSequence sequence;
         private FirstPersonPlayer player;
         private Action onCompleted;
         private int lastAdvanceFrame;
-        private float advanceAllowedAt;
+        private float visibleCharacters;
+        private int characterCount;
+        private float holdUntil;
 
         public event Action<int> LineShown;
         public event Action DialogueFinished;
-        public bool CanAdvance => IsPlaying && Time.unscaledTime >= advanceAllowedAt;
+        public event Action DialogueInput;
+        public bool IsTyping => IsPlaying && dialogueLabel.maxVisibleCharacters < characterCount;
+        public bool CanAdvance => IsPlaying && !IsTyping && Time.unscaledTime >= holdUntil;
+        public bool LastDialogueCompleted { get; private set; }
 
+        // Retained for the existing player-feel test's explicit input-lock exercise.
         public void HoldCurrentLine(float seconds)
         {
-            advanceAllowedAt = Mathf.Max(advanceAllowedAt, Time.unscaledTime + seconds);
+            holdUntil = Mathf.Max(holdUntil, Time.unscaledTime + seconds);
         }
 
         public bool IsPlaying => sequence != null;
@@ -35,6 +55,98 @@ namespace MyProstateRejectsCapitalism.Dialogue
         {
             if (dialoguePanel != null)
                 dialoguePanel.SetActive(false);
+        }
+
+        private void OnEnable()
+        {
+            if (dialogueLabel != null)
+                dialogueLabel.OnPreRenderText += CenterVisibleText;
+        }
+
+        private void LateUpdate()
+        {
+            if (centerVisibleTyping && IsPlaying && centeringNeedsUpdate)
+                dialogueLabel.SetVerticesDirty();
+        }
+
+        private void CenterVisibleText(TMP_TextInfo info)
+        {
+            centeringNeedsUpdate = false;
+            if (!centerVisibleTyping || !IsPlaying || (wordWrappedSubtitles && info.lineCount > 1)
+                || dialogueLabel.maxVisibleCharacters >= info.characterCount)
+                return;
+
+            if (typingLines == null || typingLines.Length != info.lineCount)
+                typingLines = new TypingLine[info.lineCount];
+            for (int i = 0; i < typingLines.Length; i++)
+            {
+                typingLines[i].min = float.PositiveInfinity;
+                typingLines[i].max = float.NegativeInfinity;
+            }
+            // TMP retains full-sentence metrics even when hidden glyph vertices are zeroed.
+            // Changing only mesh positions preserves wrapping, baselines and the other labels.
+            for (int i = 0; i < info.characterCount; i++)
+            {
+                var character = info.characterInfo[i];
+                if (!character.isVisible)
+                    continue;
+                int line = character.lineNumber;
+                typingLines[line].min = Mathf.Min(typingLines[line].min, character.bottomLeft.x);
+                typingLines[line].max = Mathf.Max(typingLines[line].max, character.topRight.x);
+            }
+            float blend = centeringFrame == Time.frameCount ? 0f
+                : 1f - Mathf.Exp(-Time.unscaledDeltaTime / .012f);
+            centeringFrame = Time.frameCount;
+            for (int i = 0; i < typingLines.Length; i++)
+            {
+                ref var line = ref typingLines[i];
+                if (float.IsInfinity(line.min))
+                {
+                    line.offset = 0f;
+                    line.initialized = false;
+                    continue;
+                }
+                var layout = info.lineInfo[i];
+                bool complete = dialogueLabel.maxVisibleCharacters > layout.lastVisibleCharacterIndex;
+                float target = complete ? 0f
+                    : (layout.lineExtents.min.x + layout.lineExtents.max.x - line.min - line.max) * .5f;
+                // Snap the first glyph into place; soften subsequent half-glyph shifts briefly.
+                line.offset = !line.initialized || complete ? target : Mathf.Lerp(line.offset, target, blend);
+                line.initialized = true;
+                centeringNeedsUpdate |= Mathf.Abs(line.offset - target) > .05f;
+            }
+            // Include underline, highlight and fallback-font quads, not only character quads.
+            for (int m = 0; m < info.materialCount; m++)
+            {
+                var mesh = info.meshInfo[m];
+                var vertices = mesh.vertices;
+                for (int v = 0; v + 3 < mesh.vertexCount; v += 4)
+                {
+                    if (vertices[v] == Vector3.zero && vertices[v + 1] == Vector3.zero
+                        && vertices[v + 2] == Vector3.zero && vertices[v + 3] == Vector3.zero)
+                        continue;
+                    float y = (vertices[v].y + vertices[v + 1].y + vertices[v + 2].y + vertices[v + 3].y) * .25f;
+                    int nearest = -1;
+                    float distance = float.PositiveInfinity, baselineDistance = float.PositiveInfinity;
+                    for (int i = 0; i < info.lineCount; i++)
+                    {
+                        if (float.IsInfinity(typingLines[i].min))
+                            continue;
+                        var line = info.lineInfo[i];
+                        float gap = Mathf.Max(Mathf.Max(line.descender - y, y - line.ascender), 0f);
+                        float baseline = Mathf.Abs(y - line.baseline);
+                        if (gap < distance || (gap == distance && baseline < baselineDistance))
+                        {
+                            nearest = i;
+                            distance = gap;
+                            baselineDistance = baseline;
+                        }
+                    }
+                    if (nearest >= 0)
+                        for (int j = 0; j < 4; j++)
+                            vertices[v + j].x += typingLines[nearest].offset;
+                }
+            }
         }
 
         public bool TryStart(DialogueSequence dialogue, FirstPersonPlayer owner, Action completed,
@@ -50,7 +162,7 @@ namespace MyProstateRejectsCapitalism.Dialogue
             onCompleted = completed;
             CurrentLineIndex = 0;
             lastAdvanceFrame = Time.frameCount;
-            advanceAllowedAt = Time.unscaledTime;
+            LastDialogueCompleted = false;
             AllowsMovement = allowMovement;
             if (!allowMovement)
                 player.SetInputBlocked(true);
@@ -61,15 +173,34 @@ namespace MyProstateRejectsCapitalism.Dialogue
 
         private void Update()
         {
-            if (!CanAdvance || Time.frameCount <= lastAdvanceFrame)
+            if (!IsPlaying)
+                return;
+
+            bool wasTyping = IsTyping;
+            if (wasTyping)
+            {
+                visibleCharacters += Time.unscaledDeltaTime * Mathf.Max(1f, charactersPerSecond);
+                dialogueLabel.maxVisibleCharacters = Mathf.Min(characterCount, Mathf.FloorToInt(visibleCharacters));
+            }
+
+            if (Time.frameCount <= lastAdvanceFrame)
                 return;
 
             var pressedE = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
             var clicked = Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
             if (!pressedE && !clicked)
                 return;
+            DialogueInput?.Invoke();
+            if (!wasTyping && !CanAdvance)
+                return;
 
             lastAdvanceFrame = Time.frameCount;
+            if (wasTyping)
+            {
+                RevealCurrentLine();
+                return;
+            }
+
             CurrentLineIndex++;
             if (CurrentLineIndex >= sequence.Lines.Length)
                 Finish(true);
@@ -77,12 +208,129 @@ namespace MyProstateRejectsCapitalism.Dialogue
                 ShowCurrentLine();
         }
 
+        private void RevealCurrentLine()
+        {
+            visibleCharacters = characterCount;
+            dialogueLabel.maxVisibleCharacters = characterCount;
+        }
+
         private void ShowCurrentLine()
         {
+            typingLines = null;
+            centeringNeedsUpdate = false;
+            centeringFrame = -1;
             var line = sequence.Lines[CurrentLineIndex];
             speakerLabel.text = line.speaker;
             dialogueLabel.text = line.text;
+            // TMP lays out the complete sentence once; visibility never changes wrapping or rich text.
+            dialogueLabel.maxVisibleCharacters = int.MaxValue;
+            var overflow = dialogueLabel.overflowMode;
+            if (wordWrappedSubtitles)
+            {
+                // The previous line's compact height must not truncate the new layout measurement.
+                dialogueLabel.overflowMode = TextOverflowModes.Overflow;
+                dialogueLabel.text = WrapSubtitle(line.text);
+            }
+            dialogueLabel.ForceMeshUpdate();
+            characterCount = dialogueLabel.textInfo.characterCount;
+            visibleCharacters = 0f;
+            holdUntil = 0f;
+            dialogueLabel.maxVisibleCharacters = 0;
             LineShown?.Invoke(CurrentLineIndex);
+            if (wordWrappedSubtitles)
+                dialogueLabel.overflowMode = overflow;
+        }
+
+        private struct SubtitleWord
+        {
+            public int first, last;
+            public SubtitleWord(int first, int last) { this.first = first; this.last = last; }
+        }
+
+        private string WrapSubtitle(string source)
+        {
+            // Measure TMP's parsed glyphs, including rich-text styles, before revealing any text.
+            // Source indices let us change separators without stripping or reconstructing tags.
+            dialogueLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            dialogueLabel.ForceMeshUpdate();
+            var info = dialogueLabel.textInfo;
+            float width = Mathf.Max(1f, dialogueLabel.rectTransform.rect.width
+                - dialogueLabel.margin.x - dialogueLabel.margin.z - 8f);
+            var replacements = new Dictionary<int, string>();
+            int paragraphStart = 0;
+            for (int i = 0; i <= info.characterCount; i++)
+            {
+                if (i < info.characterCount && info.characterInfo[i].character != '\n'
+                    && info.characterInfo[i].character != '\r')
+                    continue;
+                WrapParagraph(source, info, paragraphStart, i, width, replacements);
+                paragraphStart = i + 1;
+            }
+            var result = new StringBuilder(source.Length + replacements.Count);
+            for (int i = 0; i < source.Length; i++)
+                result.Append(replacements.TryGetValue(i, out var value) ? value : source[i].ToString());
+            return result.ToString();
+        }
+
+        private static void WrapParagraph(string source, TMP_TextInfo info, int start, int end, float width,
+            Dictionary<int, string> replacements)
+        {
+            var chars = info.characterInfo;
+            var words = new List<SubtitleWord>();
+            for (int i = start; i < end;)
+            {
+                if (char.IsWhiteSpace(chars[i].character)) { i++; continue; }
+                int first = i++;
+                while (i < end && !char.IsWhiteSpace(chars[i].character)) i++;
+                // Only an individual word wider than the entire subtitle can split at glyphs.
+                int chunk = first;
+                for (int j = first + 1; j < i; j++)
+                    if (chars[j].xAdvance - chars[chunk].origin > width)
+                    {
+                        words.Add(new SubtitleWord(chunk, j - 1));
+                        chunk = j;
+                    }
+                words.Add(new SubtitleWord(chunk, i - 1));
+            }
+            int count = words.Count;
+            var lines = new int[count + 1];
+            var cost = new float[count + 1];
+            var next = new int[count];
+            for (int i = count - 1; i >= 0; i--)
+            {
+                lines[i] = int.MaxValue;
+                cost[i] = float.PositiveInfinity;
+                for (int j = i; j < count; j++)
+                {
+                    float used = chars[words[j].last].xAdvance - chars[words[i].first].origin;
+                    if (used > width && j > i) break;
+                    float slack = Mathf.Max(0f, width - used) / width;
+                    char tail = chars[words[j].last].character;
+                    // Prefer fewer, reasonably balanced lines, with a small punctuation bonus.
+                    float candidate = cost[j + 1] + slack * slack
+                        - (j + 1 < count && ".,!?;:…".IndexOf(tail) >= 0 ? .035f : 0f);
+                    int lineCount = 1 + lines[j + 1];
+                    if (lineCount < lines[i] || (lineCount == lines[i] && candidate < cost[i]))
+                    {
+                        lines[i] = lineCount;
+                        cost[i] = candidate;
+                        next[i] = j + 1;
+                    }
+                }
+            }
+            for (int i = 0; i < count && next[i] < count; i = next[i])
+            {
+                int left = words[next[i] - 1].last, right = words[next[i]].first;
+                bool separator = false;
+                for (int j = left + 1; j < right; j++)
+                    if (char.IsWhiteSpace(chars[j].character))
+                    {
+                        replacements[chars[j].index] = separator ? string.Empty : "\n";
+                        separator = true;
+                    }
+                if (!separator)
+                    replacements[chars[right].index] = "\n" + source[chars[right].index];
+            }
         }
 
         private void Finish(bool completed)
@@ -90,6 +338,17 @@ namespace MyProstateRejectsCapitalism.Dialogue
             var callback = onCompleted;
             onCompleted = null;
             sequence = null;
+            visibleCharacters = 0f;
+            characterCount = 0;
+            centeringNeedsUpdate = false;
+            holdUntil = 0f;
+            LastDialogueCompleted = completed;
+            if (dialogueLabel != null)
+            {
+                dialogueLabel.maxVisibleCharacters = int.MaxValue;
+                if (!completed)
+                    dialogueLabel.text = string.Empty;
+            }
             if (dialoguePanel != null)
                 dialoguePanel.SetActive(false);
             if (player != null)
@@ -105,6 +364,8 @@ namespace MyProstateRejectsCapitalism.Dialogue
         {
             if (IsPlaying)
                 Finish(false);
+            if (dialogueLabel != null)
+                dialogueLabel.OnPreRenderText -= CenterVisibleText;
         }
     }
 }

@@ -29,6 +29,8 @@ namespace MyProstateRejectsCapitalism.Gameplay
         [SerializeField] private Volume atmosphere;
         [SerializeField] private bool polishedPresentation;
         [SerializeField] private bool completeFirstMeeting;
+        [SerializeField] private bool compactDialogueHints;
+        [SerializeField] private TMP_Text firstDialogueHint;
 
         private readonly Color ownColor = new Color(.94f, .93f, .89f);
         private readonly Color unknownColor = new Color(.77f, .87f, .91f);
@@ -49,6 +51,11 @@ namespace MyProstateRejectsCapitalism.Gameplay
         private Vignette vignette;
         private float originalVignette;
         private bool originalVignetteOverride;
+        private bool firstDialogueStarted;
+        private bool guidanceShown;
+        private bool guidanceDismissed;
+        private float guidanceStartedAt;
+        private float guidanceUntil;
 
         public bool HasBegun => began;
         public bool IsPaying => payment;
@@ -58,6 +65,12 @@ namespace MyProstateRejectsCapitalism.Gameplay
             thoughtGroup.alpha = 0f;
             thoughtDisplay.text = string.Empty;
             dialogueGroup.alpha = 0f;
+            if (compactDialogueHints)
+            {
+                hint.text = string.Empty;
+                if (firstDialogueHint != null)
+                    firstDialogueHint.text = string.Empty;
+            }
             if (atmosphere != null)
             {
                 // Volume.profile instantiates a runtime copy; shared grading remains untouched.
@@ -79,6 +92,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
         {
             dialogue.LineShown += OnLineShown;
             dialogue.DialogueFinished += OnDialogueFinished;
+            dialogue.DialogueInput += OnDialogueInput;
         }
 
         public bool TryBegin(FirstPersonPlayer owner, DialogueSequence sequence, Action completed)
@@ -115,11 +129,25 @@ namespace MyProstateRejectsCapitalism.Gameplay
 
         private void OnLineShown(int index)
         {
+            if (compactDialogueHints)
+            {
+                if (!firstDialogueStarted)
+                {
+                    firstDialogueStarted = true;
+                    guidanceStartedAt = Time.unscaledTime;
+                }
+                hint.text = string.Empty;
+                if (firstDialogueHint != null)
+                    firstDialogueHint.text = string.Empty;
+                // Size the complete block once, before typing; its lower edge stays anchored.
+                float height = Mathf.Ceil(line.preferredHeight) + 2f;
+                line.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+                speaker.rectTransform.anchoredPosition = new Vector2(0f, 44f + height + 10f);
+                ((RectTransform)dialogueGroup.transform).SetSizeWithCurrentAnchors(
+                    RectTransform.Axis.Vertical, 44f + height + 10f + 24f);
+            }
             bool walkingConversation = dialogue.AllowsMovement;
-            float silence = polishedPresentation ? (index == 0 ? .04f : .09f) : 0f;
-            if (!walkingConversation && completeFirstMeeting && index == 5)
-                silence = .28f;
-            lineAppearedAt = Time.unscaledTime + silence;
+            lineAppearedAt = Time.unscaledTime;
             lineFadeSeconds = polishedPresentation ? (index == 0 ? .09f : .18f) : .12f;
             dialogueGroup.alpha = 0f;
             bool unknown = speaker.text == "???" || (completeFirstMeeting && speaker.text == "전립선");
@@ -132,32 +160,19 @@ namespace MyProstateRejectsCapitalism.Gameplay
             // A brief searching beat: look is free, movement and interaction remain reserved.
             if (!walkingConversation)
                 player.SetDialogueLookAllowed(index == 1 || (completeFirstMeeting && index >= 3));
-            float hold = polishedPresentation
-                ? (index == 0 ? 1.05f : index == 1 ? 1.55f : index == 2 ? 1.1f : 1.25f)
-                : (index == 1 ? 1.6f : index == 0 ? 1.05f : .7f);
-            if (walkingConversation)
-                hold = Mathf.Clamp(line.text.Length * .045f, .85f, 1.6f);
-            else if (completeFirstMeeting)
-            {
-                switch (index)
-                {
-                    case 4: hold = 1.55f; break;
-                    case 5: hold = .8f; break;
-                    case 6: hold = .8f; break;
-                    case 7: hold = 1.8f; break;
-                    case 8: hold = 2.4f; break;
-                    case 9: hold = 2f; break;
-                    case 10: hold = 1.4f; break;
-                    case 11: hold = 1.2f; break;
-                }
-            }
-            dialogue.HoldCurrentLine(hold + silence);
             if (!walkingConversation && index == 0)
                 pulseStartedAt = Time.unscaledTime;
         }
 
         private void OnDialogueFinished()
         {
+            if (compactDialogueHints)
+            {
+                guidanceDismissed = true;
+                hint.text = string.Empty;
+                if (firstDialogueHint != null)
+                    firstDialogueHint.text = string.Empty;
+            }
             player.SetDialogueLookAllowed(false);
             fadingDialogue = true;
             dialogueFinishedAt = Time.unscaledTime;
@@ -166,7 +181,14 @@ namespace MyProstateRejectsCapitalism.Gameplay
 
         private void LateUpdate()
         {
-            if (began)
+            // Timed exploration thoughts use a separate label and never show an advance marker.
+            if (compactDialogueHints && !dialogue.IsPlaying)
+            {
+                hint.text = string.Empty;
+                if (firstDialogueHint != null)
+                    firstDialogueHint.text = string.Empty;
+            }
+            if (began && (payment || dialogue.IsPlaying))
             {
                 thought.text = string.Empty;
                 thoughtDisplay.text = string.Empty;
@@ -199,9 +221,9 @@ namespace MyProstateRejectsCapitalism.Gameplay
             {
                 float alpha = Mathf.Clamp01((Time.unscaledTime - lineAppearedAt) / lineFadeSeconds);
                 dialogueGroup.alpha = polishedPresentation ? Mathf.SmoothStep(0f, 1f, alpha) : alpha;
-                hint.text = dialogue.CanAdvance ? (polishedPresentation ? "›" : "E / 클릭   계속") : string.Empty;
-                if (polishedPresentation)
-                    hint.alpha = Mathf.MoveTowards(hint.alpha, dialogue.CanAdvance ? .9f : 0f, Time.unscaledDeltaTime / .18f);
+                if (!dialogue.IsTyping)
+                    dialogueGroup.alpha = 1f;
+                UpdateAdvanceHint();
             }
             else if (fadingDialogue)
             {
@@ -241,10 +263,54 @@ namespace MyProstateRejectsCapitalism.Gameplay
             }
         }
 
+        private void UpdateAdvanceHint()
+        {
+            if (!compactDialogueHints)
+            {
+                hint.text = dialogue.IsTyping ? "E / 클릭   바로 표시" : "E / 클릭   계속";
+                if (polishedPresentation)
+                    hint.alpha = Mathf.MoveTowards(hint.alpha, .9f, Time.unscaledDeltaTime / .18f);
+                return;
+            }
+
+            bool ready = dialogue.CanAdvance;
+            if (ready && !guidanceDismissed && !guidanceShown
+                && Time.unscaledTime - guidanceStartedAt >= 3f)
+            {
+                guidanceShown = true;
+                guidanceUntil = Time.unscaledTime + 4f;
+            }
+            hint.text = ready ? "▾" : string.Empty;
+            hint.alpha = ready ? .9f : 0f;
+            if (firstDialogueHint != null)
+            {
+                string notice = ready && guidanceShown && !guidanceDismissed && Time.unscaledTime < guidanceUntil
+                    ? "E / 클릭: 완성·진행" : string.Empty;
+                firstDialogueHint.text = notice;
+                firstDialogueHint.alpha = notice.Length > 0 ? .9f : 0f;
+                hint.rectTransform.anchoredPosition = new Vector2(notice.Length > 0
+                    ? firstDialogueHint.preferredWidth * .5f + 20f : 0f, 8f);
+            }
+        }
+
+        private void OnDialogueInput()
+        {
+            guidanceDismissed = true;
+            if (compactDialogueHints && firstDialogueHint != null)
+                firstDialogueHint.text = string.Empty;
+        }
+
         private void OnDisable()
         {
+            if (compactDialogueHints)
+            {
+                hint.text = string.Empty;
+                if (firstDialogueHint != null)
+                    firstDialogueHint.text = string.Empty;
+            }
             dialogue.LineShown -= OnLineShown;
             dialogue.DialogueFinished -= OnDialogueFinished;
+            dialogue.DialogueInput -= OnDialogueInput;
             StopAllCoroutines();
             if (payment)
                 player.SetInputBlocked(false);

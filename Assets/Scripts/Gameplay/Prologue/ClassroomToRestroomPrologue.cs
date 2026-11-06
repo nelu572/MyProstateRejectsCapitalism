@@ -1,4 +1,5 @@
 using MyProstateRejectsCapitalism.Characters;
+using MyProstateRejectsCapitalism.Dialogue;
 using MyProstateRejectsCapitalism.Interaction;
 using TMPro;
 using UnityEngine;
@@ -18,6 +19,8 @@ namespace MyProstateRejectsCapitalism.Gameplay
         [SerializeField] private Vector3 seatedPosition = new Vector3(-6.1f, .03f, 14.65f);
         [SerializeField] private Vector3 standingPosition = new Vector3(-5.35f, .03f, 14.65f);
         [SerializeField] private float wakeSeconds = 6.2f;
+        [SerializeField] private float standingEyeHeight = 1.54f;
+        [SerializeField] private Transform restroomEntry;
 
         private Camera view;
         private CharacterController controller;
@@ -25,7 +28,8 @@ namespace MyProstateRejectsCapitalism.Gameplay
         private float beganAt, freeSeconds, lineUntil, quietUntil;
         [SerializeField] private Transform restroomSign;
         [SerializeField] private ActOneFirstEncounter firstEncounter;
-        private bool firstThought, observation, purpose, wandered;
+        [SerializeField] private DialogueController dialogue;
+        private bool firstThought, observation, purpose, wandered, corridorThought;
         private float enteredAt, corridorTravel;
         private Vector3 previousPosition;
         public bool PurposeShown => purpose;
@@ -40,6 +44,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
         public bool CorridorRevealed => RestroomDiscovered;
         public float ObservationSeconds => freeSeconds;
         public int ThoughtsShown { get; private set; }
+        public bool CorridorThoughtShown => corridorThought;
 
         private void Start()
         {
@@ -74,7 +79,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
                 float stand = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(4.1f, wakeSeconds, WakeElapsed));
                 player.transform.position = Vector3.Lerp(seatedPosition, standingPosition, stand);
                 var sittingHead = Vector3.Lerp(new Vector3(0f, .93f, .34f), new Vector3(0f, 1.25f, .03f), head);
-                view.transform.localPosition = Vector3.Lerp(sittingHead, new Vector3(0f, 1.6f, 0f), stand);
+                view.transform.localPosition = Vector3.Lerp(sittingHead, new Vector3(0f, standingEyeHeight, 0f), stand);
                 view.transform.localRotation = Quaternion.Euler(Mathf.Lerp(68f, 5f, head) * (1f - stand), 0f, 0f);
                 blackout.alpha = 1f - Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(.55f, 1.65f, WakeElapsed));
                 if (!firstThought && WakeElapsed >= 2.25f)
@@ -92,9 +97,12 @@ namespace MyProstateRejectsCapitalism.Gameplay
             // Payment takes over the subtitle and hint immediately; route cues never queue behind it.
             if (firstEncounter != null && firstEncounter.HasBegun)
             {
-                subtitle.text = string.Empty;
-                hint.text = string.Empty;
-                lineUntil = 0f;
+                if (firstEncounter.IsPaying || (dialogue != null && dialogue.IsPlaying))
+                {
+                    subtitle.text = string.Empty;
+                    lineUntil = 0f;
+                }
+                hint.text = ClosedRestroomHint();
                 return;
             }
             if (!CorridorEntered && (door.IsOpening || door.IsOpen))
@@ -102,10 +110,10 @@ namespace MyProstateRejectsCapitalism.Gameplay
                 observation = true;
                 subtitle.text = string.Empty;
                 lineUntil = 0f;
-                quietUntil = Time.time + 8f;
+                quietUntil = Time.time + .65f;
             }
             hint.text = player.CanControl && ReferenceEquals(interactor.CurrentTarget, door) && !door.IsOpen && !door.IsOpening
-                ? "E — " + door.InteractionPrompt : string.Empty;
+                ? "E — " + door.InteractionPrompt : ClosedRestroomHint();
             if (!player.CanControl)
                 return;
             freeSeconds += Time.deltaTime;
@@ -128,17 +136,25 @@ namespace MyProstateRejectsCapitalism.Gameplay
             }
             if (CorridorEntered)
             {
-                if (!RestroomDiscovered && CanSeeRestroomSign())
+                if (!RestroomDiscovered && CanSeeRestroomSign()
+                    && !(corridorThought && Time.time < lineUntil))
                 {
                     RestroomDiscovered = true;
                     subtitle.text = string.Empty;
                     lineUntil = 0f;
                 }
-                if (pos.x < -2.45f && Mathf.Abs(pos.z - 33.7f) < 1.05f)
+                float entryZ = restroomEntry != null ? restroomEntry.position.z : 33.7f;
+                if (pos.x < -2.45f && Mathf.Abs(pos.z - entryZ) < 1.05f)
                 {
                     EntryReached = RestroomDiscovered = true;
                     subtitle.text = string.Empty;
                     lineUntil = 0f;
+                }
+                if (!corridorThought && !RestroomDiscovered && inCorridor
+                    && corridorTravel >= 3.8f && CanSpeak())
+                {
+                    corridorThought = true;
+                    Say("아직도 좀 멍하네.", 1.6f);
                 }
                 if (!wandered && !RestroomDiscovered && inCorridor && Time.time - enteredAt > 40f
                     && corridorTravel > 16f && CanSpeak())
@@ -186,7 +202,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
         private void ReturnControl()
         {
             player.transform.SetPositionAndRotation(standingPosition, Quaternion.Euler(0f, 180f, 0f));
-            view.transform.localPosition = new Vector3(0f, 1.6f, 0f);
+            view.transform.localPosition = new Vector3(0f, standingEyeHeight, 0f);
             view.transform.localRotation = Quaternion.identity;
             blackout.alpha = 0f;
             controller.enabled = true;
@@ -212,6 +228,37 @@ namespace MyProstateRejectsCapitalism.Gameplay
         }
 
         private bool CanSpeak() => Time.time >= lineUntil && Time.time >= quietUntil;
+
+        private string ClosedRestroomHint()
+        {
+            if (!player.CanControl)
+                return string.Empty;
+            if (interactor.CurrentTarget is ClosedRestroomDoor closed)
+                return "E — " + closed.InteractionPrompt;
+            if (interactor.CurrentTarget is PrologueExhibitionDoor exhibition && !exhibition.IsOpen)
+                return "E — " + exhibition.InteractionPrompt;
+            return string.Empty;
+        }
+
+        public bool TryShowExhibitionObservation()
+        {
+            if (!WakeComplete || !player.CanControl || (dialogue != null && dialogue.IsPlaying)
+                || (firstEncounter != null && firstEncounter.IsPaying))
+                return false;
+            Say("……여긴 뭐야?", 2.4f);
+            return true;
+        }
+
+        public bool TryShowRestroomObservation()
+        {
+            if (!WakeComplete || !player.CanControl || Time.time < lineUntil
+                || (dialogue != null && dialogue.IsPlaying)
+                || (firstEncounter != null && firstEncounter.IsPaying))
+                return false;
+
+            Say("여자 화장실이네.", 1.8f);
+            return true;
+        }
 
         private void Say(string text, float seconds)
         {

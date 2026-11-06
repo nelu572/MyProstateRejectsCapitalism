@@ -56,7 +56,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
                 restoreAfterFrame = Time.frameCount;
                 availableAfter = Time.unscaledTime + .35f;
             }
-            else if (!IsUnlocked && firstEncounter.HasBegun && paidToilet.HasBeenUsed)
+            else if (!IsUnlocked && dialogue.LastDialogueCompleted && firstEncounter.HasBegun && paidToilet.HasBeenUsed)
             {
                 // The required introduction owns all input until its last line ends.
                 IsUnlocked = true;
