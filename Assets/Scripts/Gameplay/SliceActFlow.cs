@@ -14,6 +14,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
         [SerializeField] private DialogueController dialogue;
         [SerializeField] private PaidToiletEvent paidToilet;
         [SerializeField] private LevelExperimentInteraction[] observations;
+        [SerializeField] private bool allowExitWithoutObservation;
         [SerializeField] private string nextScene;
         [SerializeField] private string firstScene = "Slice_Act01_PaidToilet";
         [SerializeField] private CanvasGroup fade;
@@ -40,7 +41,8 @@ namespace MyProstateRejectsCapitalism.Gameplay
             }
         }
 
-        public bool Ready => RequirementCompleted && !dialogue.IsPlaying && !IsTransitioning;
+        public bool Ready => (allowExitWithoutObservation || RequirementCompleted)
+            && !dialogue.IsPlaying && !IsTransitioning;
 
         private void Awake()
         {
