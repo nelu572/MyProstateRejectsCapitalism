@@ -32,18 +32,26 @@ namespace MyProstateRejectsCapitalism.Characters
         private float pitch;
         private float verticalVelocity;
         private int cursorLockedFrame;
+        private bool allowCursorCaptureWhileBlocked;
 
         public Camera ViewCamera => viewCamera;
         public bool InputBlocked { get; private set; }
         public bool DialogueLookAllowed { get; private set; }
         public bool JumpEnabled { get => enableJump; set => enableJump = value; }
         public Vector3 HorizontalVelocity => horizontalVelocity;
+        public bool NeedsCursorCapture => isActiveAndEnabled && (!InputBlocked || allowCursorCaptureWhileBlocked)
+            && Cursor.lockState != CursorLockMode.Locked;
+        public bool AcceptsDialogueInput => Cursor.lockState == CursorLockMode.Locked
+            && Time.frameCount > cursorLockedFrame && !EscapePressed;
         public bool CanControl => isActiveAndEnabled && !InputBlocked && Cursor.lockState == CursorLockMode.Locked
             && Time.frameCount > cursorLockedFrame;
 
-        public void SetInputBlocked(bool blocked)
+        private static bool EscapePressed => Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
+
+        public void SetInputBlocked(bool blocked, bool allowCursorCapture = false)
         {
             InputBlocked = blocked;
+            allowCursorCaptureWhileBlocked = blocked && allowCursorCapture;
             if (blocked)
                 horizontalVelocity = Vector3.zero;
             if (!blocked)
@@ -135,9 +143,9 @@ namespace MyProstateRejectsCapitalism.Characters
 
         private void Update()
         {
-            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            if (EscapePressed)
                 SetCursorLocked(false);
-            else if ((!InputBlocked || DialogueLookAllowed) && Cursor.lockState != CursorLockMode.Locked && Mouse.current != null
+            else if (NeedsCursorCapture && Mouse.current != null
                 && Mouse.current.leftButton.wasPressedThisFrame)
                 SetCursorLocked(true);
 

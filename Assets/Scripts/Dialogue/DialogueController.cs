@@ -165,7 +165,7 @@ namespace MyProstateRejectsCapitalism.Dialogue
             LastDialogueCompleted = false;
             AllowsMovement = allowMovement;
             if (!allowMovement)
-                player.SetInputBlocked(true);
+                player.SetInputBlocked(true, allowCursorCapture: true);
             dialoguePanel.SetActive(true);
             ShowCurrentLine();
             return true;
@@ -183,7 +183,8 @@ namespace MyProstateRejectsCapitalism.Dialogue
                 dialogueLabel.maxVisibleCharacters = Mathf.Min(characterCount, Mathf.FloorToInt(visibleCharacters));
             }
 
-            if (Time.frameCount <= lastAdvanceFrame)
+            // The click that recaptures the cursor belongs to the player, regardless of Update order.
+            if (Time.frameCount <= lastAdvanceFrame || !player.AcceptsDialogueInput)
                 return;
 
             var pressedE = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;

@@ -561,6 +561,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1427054}
   - component: {fileID: 1427055}
+  - component: {fileID: 1427056}
   m_Layer: 0
   m_Name: Toilet exhibit 05
   m_TagString: Untagged
@@ -617,6 +618,26 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.64, y: 1.02, z: 0.86}
   m_Center: {x: 0, y: 0.49, z: 0.03}
+--- !u!114 &1427056
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1427053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b6b633d8de75b468fe32c7415b26a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prompt: "\uBCC0\uAE30 \uC774\uC6A9 \uC2DC\uB3C4"
+  response: {fileID: 11400000, guid: 873fbd0de7f0d26438d8a503177d6fbd, type: 2}
+  completeWithoutDialogue: 0
+  dialogueController: {fileID: 1854888054}
+  hud: {fileID: 1854888053}
+  nextObjective: "\uBB34\uB8CC \uD654\uC7A5\uC2E4 \uC548\uB0B4\uB97C \uB530\uB77C\uAC00\uC790."
+  sharedProgress: {fileID: 34952906}
+  additionalResponse: {fileID: 11400000, guid: b7eb7563f7c578840afafb2ff8379acb, type: 2}
 --- !u!1 &1712717
 GameObject:
   m_ObjectHideFlags: 0
@@ -7371,8 +7392,17 @@ MonoBehaviour:
   dialogue: {fileID: 1854888054}
   paidToilet: {fileID: 0}
   observations:
+  - {fileID: 2046378147}
+  - {fileID: 819421411}
   - {fileID: 980763501}
   - {fileID: 2004100788}
+  - {fileID: 1427056}
+  - {fileID: 1429833997}
+  - {fileID: 608883643}
+  - {fileID: 1441085601}
+  - {fileID: 76356820}
+  - {fileID: 1633822121}
+  allowExitWithoutObservation: 0
   nextScene: Slice_Act03_Advertising
   firstScene: Slice_Act01_PaidToilet
   fade: {fileID: 1703546887}
@@ -14017,6 +14047,7 @@ GameObject:
   m_Component:
   - component: {fileID: 76356818}
   - component: {fileID: 76356819}
+  - component: {fileID: 76356820}
   m_Layer: 0
   m_Name: Toilet exhibit 09
   m_TagString: Untagged
@@ -14073,6 +14104,26 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.64, y: 1.02, z: 0.86}
   m_Center: {x: 0, y: 0.49, z: 0.03}
+--- !u!114 &76356820
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 76356817}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b6b633d8de75b468fe32c7415b26a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prompt: "\uBCC0\uAE30 \uC774\uC6A9 \uC2DC\uB3C4"
+  response: {fileID: 11400000, guid: 873fbd0de7f0d26438d8a503177d6fbd, type: 2}
+  completeWithoutDialogue: 0
+  dialogueController: {fileID: 1854888054}
+  hud: {fileID: 1854888053}
+  nextObjective: "\uBB34\uB8CC \uD654\uC7A5\uC2E4 \uC548\uB0B4\uB97C \uB530\uB77C\uAC00\uC790."
+  sharedProgress: {fileID: 34952906}
+  additionalResponse: {fileID: 11400000, guid: b7eb7563f7c578840afafb2ff8379acb, type: 2}
 --- !u!1 &77029049
 GameObject:
   m_ObjectHideFlags: 0
@@ -67293,6 +67344,7 @@ MonoBehaviour:
   dialogue: {fileID: 1854888054}
   firstEncounter: {fileID: 934643246}
   paidToilet: {fileID: 934643247}
+  unlockOnArrival: 0
   flow: {fileID: 0}
   talkHint: {fileID: 723296673}
   conversations:
@@ -109015,6 +109067,7 @@ GameObject:
   m_Component:
   - component: {fileID: 608883641}
   - component: {fileID: 608883642}
+  - component: {fileID: 608883643}
   m_Layer: 0
   m_Name: Toilet exhibit 07
   m_TagString: Untagged
@@ -109074,6 +109127,26 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.12, y: 0.16, z: 0.84}
   m_Center: {x: 0, y: -0.01, z: 0}
+--- !u!114 &608883643
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 608883640}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b6b633d8de75b468fe32c7415b26a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prompt: "\uBCC0\uAE30 \uC774\uC6A9 \uC2DC\uB3C4"
+  response: {fileID: 11400000, guid: 873fbd0de7f0d26438d8a503177d6fbd, type: 2}
+  completeWithoutDialogue: 0
+  dialogueController: {fileID: 1854888054}
+  hud: {fileID: 1854888053}
+  nextObjective: "\uBB34\uB8CC \uD654\uC7A5\uC2E4 \uC548\uB0B4\uB97C \uB530\uB77C\uAC00\uC790."
+  sharedProgress: {fileID: 34952906}
+  additionalResponse: {fileID: 11400000, guid: b7eb7563f7c578840afafb2ff8379acb, type: 2}
 --- !u!1 &608893925
 GameObject:
   m_ObjectHideFlags: 0
@@ -145660,6 +145733,7 @@ GameObject:
   m_Component:
   - component: {fileID: 819421409}
   - component: {fileID: 819421410}
+  - component: {fileID: 819421411}
   m_Layer: 0
   m_Name: Toilet exhibit 02
   m_TagString: Untagged
@@ -145676,7 +145750,7 @@ Transform:
   m_GameObject: {fileID: 819421408}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.7372773, z: -0, w: 0.6755902}
-  m_LocalPosition: {x: 1.04, y: 0.16, z: 32.25}
+  m_LocalPosition: {x: 1.04, y: 0.16, z: 36.18}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -145716,6 +145790,26 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.64, y: 0.62, z: 0.86}
   m_Center: {x: 0, y: 0.28, z: 0.02}
+--- !u!114 &819421411
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 819421408}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b6b633d8de75b468fe32c7415b26a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prompt: "\uBCC0\uAE30 \uC774\uC6A9 \uC2DC\uB3C4"
+  response: {fileID: 11400000, guid: 873fbd0de7f0d26438d8a503177d6fbd, type: 2}
+  completeWithoutDialogue: 0
+  dialogueController: {fileID: 1854888054}
+  hud: {fileID: 1854888053}
+  nextObjective: "\uBB34\uB8CC \uD654\uC7A5\uC2E4 \uC548\uB0B4\uB97C \uB530\uB77C\uAC00\uC790."
+  sharedProgress: {fileID: 34952906}
+  additionalResponse: {fileID: 11400000, guid: b7eb7563f7c578840afafb2ff8379acb, type: 2}
 --- !u!1 &821193071
 GameObject:
   m_ObjectHideFlags: 0
@@ -171393,7 +171487,7 @@ Transform:
   m_GameObject: {fileID: 980763498}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -1.26, y: 0.16, z: 38.5}
+  m_LocalPosition: {x: -1.02, y: 0.16, z: 38.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -171445,6 +171539,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prompt: "\uBCC0\uAE30 \uC774\uC6A9 \uC2DC\uB3C4"
   response: {fileID: 11400000, guid: 873fbd0de7f0d26438d8a503177d6fbd, type: 2}
+  completeWithoutDialogue: 0
   dialogueController: {fileID: 1854888054}
   hud: {fileID: 1854888053}
   nextObjective: "\uBB34\uB8CC \uD654\uC7A5\uC2E4 \uC548\uB0B4\uB97C \uB530\uB77C\uAC00\uC790."
@@ -248931,6 +249026,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1429833995}
   - component: {fileID: 1429833996}
+  - component: {fileID: 1429833997}
   m_Layer: 0
   m_Name: Toilet exhibit 06
   m_TagString: Untagged
@@ -248987,6 +249083,26 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.64, y: 0.62, z: 0.86}
   m_Center: {x: 0, y: 0.28, z: 0.02}
+--- !u!114 &1429833997
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1429833994}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b6b633d8de75b468fe32c7415b26a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prompt: "\uBCC0\uAE30 \uC774\uC6A9 \uC2DC\uB3C4"
+  response: {fileID: 11400000, guid: 873fbd0de7f0d26438d8a503177d6fbd, type: 2}
+  completeWithoutDialogue: 0
+  dialogueController: {fileID: 1854888054}
+  hud: {fileID: 1854888053}
+  nextObjective: "\uBB34\uB8CC \uD654\uC7A5\uC2E4 \uC548\uB0B4\uB97C \uB530\uB77C\uAC00\uC790."
+  sharedProgress: {fileID: 34952906}
+  additionalResponse: {fileID: 11400000, guid: b7eb7563f7c578840afafb2ff8379acb, type: 2}
 --- !u!1 &1430837756
 GameObject:
   m_ObjectHideFlags: 0
@@ -250530,6 +250646,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1441085599}
   - component: {fileID: 1441085600}
+  - component: {fileID: 1441085601}
   m_Layer: 0
   m_Name: Toilet exhibit 08
   m_TagString: Untagged
@@ -250586,6 +250703,26 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.64, y: 0.62, z: 0.86}
   m_Center: {x: 0, y: 0.28, z: 0.02}
+--- !u!114 &1441085601
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1441085598}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b6b633d8de75b468fe32c7415b26a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prompt: "\uBCC0\uAE30 \uC774\uC6A9 \uC2DC\uB3C4"
+  response: {fileID: 11400000, guid: 873fbd0de7f0d26438d8a503177d6fbd, type: 2}
+  completeWithoutDialogue: 0
+  dialogueController: {fileID: 1854888054}
+  hud: {fileID: 1854888053}
+  nextObjective: "\uBB34\uB8CC \uD654\uC7A5\uC2E4 \uC548\uB0B4\uB97C \uB530\uB77C\uAC00\uC790."
+  sharedProgress: {fileID: 34952906}
+  additionalResponse: {fileID: 11400000, guid: b7eb7563f7c578840afafb2ff8379acb, type: 2}
 --- !u!1 &1441147266
 GameObject:
   m_ObjectHideFlags: 0
@@ -285903,6 +286040,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1633822119}
   - component: {fileID: 1633822120}
+  - component: {fileID: 1633822121}
   m_Layer: 0
   m_Name: Toilet exhibit 10
   m_TagString: Untagged
@@ -285957,6 +286095,26 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.64, y: 0.9, z: 0.85}
   m_Center: {x: 0, y: 0.45, z: 0.05}
+--- !u!114 &1633822121
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1633822118}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b6b633d8de75b468fe32c7415b26a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prompt: "\uBCC0\uAE30 \uC774\uC6A9 \uC2DC\uB3C4"
+  response: {fileID: 11400000, guid: 873fbd0de7f0d26438d8a503177d6fbd, type: 2}
+  completeWithoutDialogue: 0
+  dialogueController: {fileID: 1854888054}
+  hud: {fileID: 1854888053}
+  nextObjective: "\uBB34\uB8CC \uD654\uC7A5\uC2E4 \uC548\uB0B4\uB97C \uB530\uB77C\uAC00\uC790."
+  sharedProgress: {fileID: 34952906}
+  additionalResponse: {fileID: 11400000, guid: b7eb7563f7c578840afafb2ff8379acb, type: 2}
 --- !u!1 &1633846406
 GameObject:
   m_ObjectHideFlags: 0
@@ -350998,6 +351156,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   prompt: "\uBCC0\uAE30 \uC774\uC6A9 \uC2DC\uB3C4"
   response: {fileID: 11400000, guid: 873fbd0de7f0d26438d8a503177d6fbd, type: 2}
+  completeWithoutDialogue: 0
   dialogueController: {fileID: 1854888054}
   hud: {fileID: 1854888053}
   nextObjective: "\uBB34\uB8CC \uD654\uC7A5\uC2E4 \uC548\uB0B4\uB97C \uB530\uB77C\uAC00\uC790."
@@ -359025,6 +359184,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2046378145}
   - component: {fileID: 2046378146}
+  - component: {fileID: 2046378147}
   m_Layer: 0
   m_Name: Toilet exhibit 01
   m_TagString: Untagged
@@ -359079,6 +359239,26 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.64, y: 0.9, z: 0.85}
   m_Center: {x: 0, y: 0.45, z: 0.05}
+--- !u!114 &2046378147
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2046378144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 34b6b633d8de75b468fe32c7415b26a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  prompt: "\uBCC0\uAE30 \uC774\uC6A9 \uC2DC\uB3C4"
+  response: {fileID: 11400000, guid: 873fbd0de7f0d26438d8a503177d6fbd, type: 2}
+  completeWithoutDialogue: 0
+  dialogueController: {fileID: 1854888054}
+  hud: {fileID: 1854888053}
+  nextObjective: "\uBB34\uB8CC \uD654\uC7A5\uC2E4 \uC548\uB0B4\uB97C \uB530\uB77C\uAC00\uC790."
+  sharedProgress: {fileID: 34952906}
+  additionalResponse: {fileID: 11400000, guid: b7eb7563f7c578840afafb2ff8379acb, type: 2}
 --- !u!1 &2047444023
 GameObject:
   m_ObjectHideFlags: 0
