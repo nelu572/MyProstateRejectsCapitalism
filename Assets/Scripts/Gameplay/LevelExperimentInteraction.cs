@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace MyProstateRejectsCapitalism.Gameplay
 {
-    // Temporary responses for the two independent level experiments.
+    // Shared observation interaction; a showroom can use one first response across its exhibits.
     public sealed class LevelExperimentInteraction : MonoBehaviour, IInteractable
     {
         [SerializeField] private string prompt;
@@ -14,6 +14,8 @@ namespace MyProstateRejectsCapitalism.Gameplay
         [SerializeField] private DialogueController dialogueController;
         [SerializeField] private PrototypeHud hud;
         [SerializeField] private string nextObjective;
+        [SerializeField] private SliceActFlow sharedProgress;
+        [SerializeField] private DialogueSequence additionalResponse;
 
         public bool HasBeenUsed { get; private set; }
         public string InteractionPrompt => prompt;
@@ -27,7 +29,9 @@ namespace MyProstateRejectsCapitalism.Gameplay
             if (player == null || !player.CanControl)
                 return;
 
-            if (dialogueController.TryStart(response, player, () => hud.SetObjective(nextObjective)))
+            var sequence = sharedProgress != null && sharedProgress.RequirementCompleted && additionalResponse != null
+                ? additionalResponse : response;
+            if (dialogueController.TryStart(sequence, player, () => hud.SetObjective(nextObjective)))
             {
                 HasBeenUsed = true;
                 enabled = false;

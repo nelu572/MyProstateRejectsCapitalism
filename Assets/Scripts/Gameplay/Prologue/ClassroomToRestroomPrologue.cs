@@ -237,6 +237,10 @@ namespace MyProstateRejectsCapitalism.Gameplay
                 return "E — " + closed.InteractionPrompt;
             if (interactor.CurrentTarget is PrologueExhibitionDoor exhibition && !exhibition.IsOpen)
                 return "E — " + exhibition.InteractionPrompt;
+            if (interactor.CurrentTarget is LevelExperimentInteraction exhibit)
+                return "E — " + exhibit.InteractionPrompt;
+            if (interactor.CurrentTarget is SliceExit exit)
+                return "E — " + exit.InteractionPrompt;
             return string.Empty;
         }
 
