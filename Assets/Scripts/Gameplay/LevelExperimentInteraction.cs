@@ -11,6 +11,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
     {
         [SerializeField] private string prompt;
         [SerializeField] private DialogueSequence response;
+        [SerializeField] private bool completeWithoutDialogue;
         [SerializeField] private DialogueController dialogueController;
         [SerializeField] private PrototypeHud hud;
         [SerializeField] private string nextObjective;
@@ -31,10 +32,12 @@ namespace MyProstateRejectsCapitalism.Gameplay
 
             var sequence = sharedProgress != null && sharedProgress.RequirementCompleted && additionalResponse != null
                 ? additionalResponse : response;
-            if (dialogueController.TryStart(sequence, player, () => hud.SetObjective(nextObjective)))
+            if (completeWithoutDialogue || dialogueController.TryStart(sequence, player, () => hud.SetObjective(nextObjective)))
             {
                 HasBeenUsed = true;
                 enabled = false;
+                if (completeWithoutDialogue)
+                    hud.SetObjective(nextObjective);
             }
         }
     }
