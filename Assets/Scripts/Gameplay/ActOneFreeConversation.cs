@@ -7,7 +7,6 @@ using UnityEngine.InputSystem;
 
 namespace MyProstateRejectsCapitalism.Gameplay
 {
-    // ACT 1 review only. No persistent state or requirements for the next area.
     [DefaultExecutionOrder(400)]
     public sealed class ActOneFreeConversation : MonoBehaviour
     {
@@ -18,6 +17,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
         [SerializeField] private DialogueController dialogue;
         [SerializeField] private ActOneFirstEncounter firstEncounter;
         [SerializeField] private PaidToiletEvent paidToilet;
+        [SerializeField] private bool unlockOnArrival;
         [SerializeField] private SliceActFlow flow;
         [SerializeField] private TMP_Text talkHint;
         [Tooltip("PaidToilet, Corridor, NextArea 순서")]
@@ -45,6 +45,8 @@ namespace MyProstateRejectsCapitalism.Gameplay
         {
             dialogue.DialogueFinished += OnDialogueFinished;
             talkHint.text = string.Empty;
+            if (unlockOnArrival)
+                Unlock();
         }
 
         private void OnDialogueFinished()
@@ -59,11 +61,16 @@ namespace MyProstateRejectsCapitalism.Gameplay
             else if (!IsUnlocked && dialogue.LastDialogueCompleted && firstEncounter.HasBegun && paidToilet.HasBeenUsed)
             {
                 // The required introduction owns all input until its last line ends.
-                IsUnlocked = true;
-                lastLocation = CurrentLocation;
-                hintUntil = Time.unscaledTime + 6f;
-                availableAfter = Time.unscaledTime + .35f;
+                Unlock();
             }
+        }
+
+        private void Unlock()
+        {
+            IsUnlocked = true;
+            lastLocation = CurrentLocation;
+            hintUntil = Time.unscaledTime + 6f;
+            availableAfter = Time.unscaledTime + .35f;
         }
 
         private void Update()
@@ -111,7 +118,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
         }
 
         private bool CanTalk => IsUnlocked && !talking && !restoreInteractor
-            && !dialogue.IsPlaying && !firstEncounter.IsPaying
+            && !dialogue.IsPlaying && (firstEncounter == null || !firstEncounter.IsPaying)
             && (flow == null || (!flow.IsTransitioning && !flow.IsEndingVisible))
             && player.CanControl && Time.unscaledTime >= availableAfter;
 
