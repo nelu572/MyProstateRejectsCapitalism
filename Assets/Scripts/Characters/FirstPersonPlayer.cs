@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using MyProstateRejectsCapitalism.UI;
 
 namespace MyProstateRejectsCapitalism.Characters
 {
@@ -33,17 +34,20 @@ namespace MyProstateRejectsCapitalism.Characters
         private float verticalVelocity;
         private int cursorLockedFrame;
         private bool allowCursorCaptureWhileBlocked;
+        private CursorLockMode cursorBeforePause;
 
         public Camera ViewCamera => viewCamera;
         public bool InputBlocked { get; private set; }
         public bool DialogueLookAllowed { get; private set; }
+        public bool IsPaused { get; private set; }
+        public float MouseSensitivity => MenuSettings.Sensitivity(mouseSensitivity);
         public bool JumpEnabled { get => enableJump; set => enableJump = value; }
         public Vector3 HorizontalVelocity => horizontalVelocity;
-        public bool NeedsCursorCapture => isActiveAndEnabled && (!InputBlocked || allowCursorCaptureWhileBlocked)
+        public bool NeedsCursorCapture => !IsPaused && isActiveAndEnabled && (!InputBlocked || allowCursorCaptureWhileBlocked)
             && Cursor.lockState != CursorLockMode.Locked;
-        public bool AcceptsDialogueInput => Cursor.lockState == CursorLockMode.Locked
+        public bool AcceptsDialogueInput => !IsPaused && Cursor.lockState == CursorLockMode.Locked
             && Time.frameCount > cursorLockedFrame && !EscapePressed;
-        public bool CanControl => isActiveAndEnabled && !InputBlocked && Cursor.lockState == CursorLockMode.Locked
+        public bool CanControl => !IsPaused && isActiveAndEnabled && !InputBlocked && Cursor.lockState == CursorLockMode.Locked
             && Time.frameCount > cursorLockedFrame;
 
         private static bool EscapePressed => Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
@@ -62,6 +66,24 @@ namespace MyProstateRejectsCapitalism.Characters
         }
 
         public void SetDialogueLookAllowed(bool allowed) => DialogueLookAllowed = allowed;
+
+        internal void SetPaused(bool paused)
+        {
+            if (paused == IsPaused)
+                return;
+            IsPaused = paused;
+            if (paused)
+            {
+                cursorBeforePause = Cursor.lockState;
+                horizontalVelocity = Vector3.zero;
+                SetCursorLocked(false);
+            }
+            else
+            {
+                SetCursorLocked(cursorBeforePause == CursorLockMode.Locked);
+                cursorLockedFrame = Time.frameCount;
+            }
+        }
 
         public void SetMovementTuning(float speed, float startAcceleration, float stopDeceleration,
             float turnAcceleration, float height, float gravityStrength)
@@ -143,8 +165,13 @@ namespace MyProstateRejectsCapitalism.Characters
 
         private void Update()
         {
+            if (IsPaused)
+                return;
             if (EscapePressed)
-                SetCursorLocked(false);
+            {
+                if (!TryGetComponent<PauseMenu>(out _))
+                    SetCursorLocked(false);
+            }
             else if (NeedsCursorCapture && Mouse.current != null
                 && Mouse.current.leftButton.wasPressedThisFrame)
                 SetCursorLocked(true);
@@ -153,7 +180,7 @@ namespace MyProstateRejectsCapitalism.Characters
             bool grounded = controller.isGrounded;
             if (CanControl || (InputBlocked && DialogueLookAllowed && Cursor.lockState == CursorLockMode.Locked))
             {
-                var look = lookAction.ReadValue<Vector2>() * mouseSensitivity;
+                var look = lookAction.ReadValue<Vector2>() * MouseSensitivity;
                 transform.Rotate(0f, look.x, 0f);
                 pitch = Mathf.Clamp(pitch - look.y, -pitchLimit, pitchLimit);
                 viewCamera.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);

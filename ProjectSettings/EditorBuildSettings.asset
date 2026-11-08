@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/Title/Title_MainMenu.unity
+    guid: d27d287fe5bf1b34ab548cd8573de578
+  - enabled: 1
     path: Assets/Scenes/_Development/Prologue/Prologue_ClassroomToRestroom_Validation.unity
     guid: 8f5ee62e32c3b1f47980a6b19eb8ae9a
   - enabled: 1

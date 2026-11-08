@@ -65,6 +65,9 @@ namespace MyProstateRejectsCapitalism.Gameplay
 
         private void LateUpdate()
         {
+            if (player.IsPaused)
+                return;
+
             if (!WakeComplete)
             {
                 WakeElapsed = Time.time - beganAt;

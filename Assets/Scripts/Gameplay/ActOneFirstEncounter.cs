@@ -181,6 +181,9 @@ namespace MyProstateRejectsCapitalism.Gameplay
 
         private void LateUpdate()
         {
+            if (player.IsPaused)
+                return;
+
             // Timed exploration thoughts use a separate label and never show an advance marker.
             if (compactDialogueHints && !dialogue.IsPlaying)
             {

@@ -70,6 +70,9 @@ namespace MyProstateRejectsCapitalism.Gameplay
 
         private void Update()
         {
+            if (player.IsPaused)
+                return;
+
             if (IsEndingVisible)
             {
                 if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)

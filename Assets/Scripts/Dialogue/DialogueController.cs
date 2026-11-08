@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using MyProstateRejectsCapitalism.Characters;
+using MyProstateRejectsCapitalism.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -38,13 +39,14 @@ namespace MyProstateRejectsCapitalism.Dialogue
         public event Action DialogueFinished;
         public event Action DialogueInput;
         public bool IsTyping => IsPlaying && dialogueLabel.maxVisibleCharacters < characterCount;
-        public bool CanAdvance => IsPlaying && !IsTyping && Time.unscaledTime >= holdUntil;
+        public bool CanAdvance => IsPlaying && !IsTyping && Time.time >= holdUntil;
         public bool LastDialogueCompleted { get; private set; }
+        public float SubtitleSpeed => MenuSettings.SubtitleSpeed(charactersPerSecond);
 
         // Retained for the existing player-feel test's explicit input-lock exercise.
         public void HoldCurrentLine(float seconds)
         {
-            holdUntil = Mathf.Max(holdUntil, Time.unscaledTime + seconds);
+            holdUntil = Mathf.Max(holdUntil, Time.time + seconds);
         }
 
         public bool IsPlaying => sequence != null;
@@ -173,13 +175,13 @@ namespace MyProstateRejectsCapitalism.Dialogue
 
         private void Update()
         {
-            if (!IsPlaying)
+            if (!IsPlaying || player.IsPaused)
                 return;
 
             bool wasTyping = IsTyping;
             if (wasTyping)
             {
-                visibleCharacters += Time.unscaledDeltaTime * Mathf.Max(1f, charactersPerSecond);
+                visibleCharacters += Time.deltaTime * Mathf.Max(1f, SubtitleSpeed);
                 dialogueLabel.maxVisibleCharacters = Mathf.Min(characterCount, Mathf.FloorToInt(visibleCharacters));
             }
 
