@@ -96,9 +96,8 @@ namespace MyProstateRejectsCapitalism.Gameplay
             var keyboard = Keyboard.current;
             if (!CanTalk || keyboard == null || !keyboard.fKey.wasPressedThisFrame)
                 return;
-            // Give an E interaction or cursor-capture click priority on the same frame.
-            if (keyboard.eKey.wasPressedThisFrame
-                || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame))
+            // A focused exhibit owns F; a simultaneous click belongs to interaction.
+            if (player.InteractionClickPressed || (inspection != null && inspection.CanInspect))
                 return;
 
             int context = (int)CurrentLocation;
@@ -108,9 +107,9 @@ namespace MyProstateRejectsCapitalism.Gameplay
 
             previousInteractorEnabled = interactor.enabled;
             interactor.enabled = false;
-            talking = true;
             if (dialogue.TryStart(data[context], player, null, allowMovement: true))
             {
+                talking = true;
                 heard[context] = true;
                 hintUntil = 0f;
             }
@@ -122,7 +121,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
         }
 
         private bool CanTalk => IsUnlocked && !talking && !restoreInteractor
-            && !dialogue.IsPlaying && (firstEncounter == null || !firstEncounter.IsPaying)
+            && !dialogue.IsInteractive && (firstEncounter == null || !firstEncounter.IsPaying)
             && (flow == null || (!flow.IsTransitioning && !flow.IsEndingVisible))
             && player.CanControl && Time.unscaledTime >= availableAfter;
 
@@ -131,10 +130,11 @@ namespace MyProstateRejectsCapitalism.Gameplay
             // A brief reminder on unlock/area entry, rather than permanent companion UI.
             bool inspectable = inspection != null && inspection.CanInspect;
             bool visible = inspectable || (CanTalk && Time.unscaledTime < hintUntil);
-            talkHint.text = inspectable ? "F — 살펴보기" : visible ? "F   말 걸기" : string.Empty;
-            float opacity = exhibitionReadability != null && exhibitionReadability.AppliesTo(player) ? .94f : .62f;
-            talkHint.alpha = Mathf.MoveTowards(talkHint.alpha, visible ? opacity : 0f,
-                Time.unscaledDeltaTime / .2f);
+            talkHint.text = inspectable ? "F — 작품 관람" : visible ? "F   말 걸기" : string.Empty;
+            bool inGallery = exhibitionReadability != null && exhibitionReadability.AppliesTo(player);
+            float opacity = inGallery ? .94f : .62f;
+            talkHint.alpha = inspectable ? 1f : Mathf.MoveTowards(talkHint.alpha,
+                visible ? opacity : 0f, Time.unscaledDeltaTime / .2f);
         }
 
         private void OnDisable()

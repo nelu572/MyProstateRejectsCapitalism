@@ -2,7 +2,6 @@ using MyProstateRejectsCapitalism.Characters;
 using MyProstateRejectsCapitalism.Interaction;
 using TMPro;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace MyProstateRejectsCapitalism.Gameplay
 {
@@ -19,11 +18,13 @@ namespace MyProstateRejectsCapitalism.Gameplay
         [SerializeField] private float doorwayZ = 27.4f;
         [SerializeField] private string sceneAfterOpening;
         [SerializeField] private bool arriveOpen;
+        [SerializeField] private bool sealOnArrival;
         [SerializeField] private TMP_Text arrivalThought;
 
         private bool opening;
         private float observedAt;
         private bool handoffStarted;
+        private SliceActFlow handoffFlow;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         internal bool IsHandingOff => handoffStarted;
 #endif
@@ -36,7 +37,21 @@ namespace MyProstateRejectsCapitalism.Gameplay
 
         private void Start()
         {
+            if (sealOnArrival)
+            {
+                SealEntrance();
+                return;
+            }
             returnWall.SetActive(false);
+            if (!string.IsNullOrEmpty(sceneAfterOpening))
+            {
+                handoffFlow = FindFirstObjectByType<SliceActFlow>();
+                if (handoffFlow == null || !Application.CanStreamedLevelBeLoaded(sceneAfterOpening))
+                {
+                    Debug.LogError("Missing flow or build scene for the showroom doorway.", this);
+                    handoffFlow = null;
+                }
+            }
             if (arriveOpen)
             {
                 OpenFraction = 1f;
@@ -46,7 +61,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
 
         public void Interact(GameObject owner)
         {
-            if (opening || IsOpen || owner != player.gameObject || !player.CanControl
+            if (opening || IsOpen || ReturnSealed || owner != player.gameObject || !player.CanControl
                 || (conversation != null && !conversation.IsUnlocked))
                 return;
             opening = true;
@@ -61,19 +76,14 @@ namespace MyProstateRejectsCapitalism.Gameplay
                 if (IsOpen)
                     opening = false;
             }
-            if (!IsOpen)
+            if (!IsOpen && !ReturnSealed)
                 return;
 
             if (!string.IsNullOrEmpty(sceneAfterOpening))
             {
-                if (!handoffStarted && player.transform.position.z > doorwayZ - .02f
-                    && player.CanControl && (conversation == null || !conversation.IsTalking))
-                {
-                    handoffStarted = true;
-                    var load = SceneManager.LoadSceneAsync(sceneAfterOpening, LoadSceneMode.Single);
-                    if (load != null)
-                        player.SetInputBlocked(true);
-                }
+                if (!handoffStarted && handoffFlow != null && player.transform.position.z > doorwayZ - .02f
+                    && (conversation == null || !conversation.IsTalking))
+                    handoffStarted = handoffFlow.TryTransition(player, sceneAfterOpening);
                 return;
             }
 
@@ -96,13 +106,16 @@ namespace MyProstateRejectsCapitalism.Gameplay
             {
                 var bounds = new Bounds(new Vector3(0f, 1.5f, doorwayZ), new Vector3(4f, 3f, .35f));
                 if (!GeometryUtility.TestPlanesAABB(GeometryUtility.CalculateFrustumPlanes(view), bounds))
-                {
-                    returnWall.SetActive(true);
-                    frame.SetActive(false);
-                    leaf.gameObject.SetActive(false);
-                    ReturnSealed = true;
-                }
+                    SealEntrance();
             }
+        }
+
+        private void SealEntrance()
+        {
+            returnWall.SetActive(true);
+            frame.SetActive(false);
+            leaf.gameObject.SetActive(false);
+            ReturnSealed = true;
         }
 
         private bool TryObserve()

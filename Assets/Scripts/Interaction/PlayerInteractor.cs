@@ -7,7 +7,7 @@ namespace MyProstateRejectsCapitalism.Interaction
     [RequireComponent(typeof(FirstPersonPlayer))]
     public sealed class PlayerInteractor : MonoBehaviour
     {
-        internal const string InputPrompt = "클릭 / E - ";
+        internal const string InputPrompt = "클릭 — ";
         [SerializeField, Min(0.1f)] private float interactionDistance = 3f;
         [SerializeField] private LayerMask interactionMask = Physics.DefaultRaycastLayers;
         [SerializeField] private bool showDefaultHud = true;
@@ -70,7 +70,7 @@ namespace MyProstateRejectsCapitalism.Interaction
             if (!player.CanControl)
             {
                 GUI.Box(new Rect(Screen.width / 2f - 180f, Screen.height - 70f, 360f, 40f),
-                    "Click to capture mouse | Esc to release");
+                    "클릭 — 마우스 조작 복구");
                 return;
             }
 

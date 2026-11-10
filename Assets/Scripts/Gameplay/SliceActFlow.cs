@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using MyProstateRejectsCapitalism.Characters;
 using MyProstateRejectsCapitalism.Dialogue;
@@ -24,6 +25,9 @@ namespace MyProstateRejectsCapitalism.Gameplay
         [SerializeField] private GameObject endingPanel;
         [SerializeField] private Button restartButton;
         [SerializeField] private Button quitButton;
+        [SerializeField] private ProstateLimitSettings limitSettings;
+        [SerializeField] private bool restartOnFall;
+        [SerializeField] private float fallBelowY = -2.75f;
 
         public bool IsTransitioning { get; private set; }
         public bool IsEndingVisible => endingPanel != null && endingPanel.activeSelf;
@@ -42,7 +46,10 @@ namespace MyProstateRejectsCapitalism.Gameplay
         }
 
         public bool Ready => (allowExitWithoutObservation || RequirementCompleted)
-            && !dialogue.IsPlaying && !IsTransitioning;
+            && !dialogue.IsInteractive && !IsTransitioning;
+
+        internal bool TracksLimit => !IsTransitioning && !IsEndingVisible
+            && !(endAfterDialogue && RequirementCompleted);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string FinalToiletScene = "Slice_Act05_FinalToilet";
@@ -111,13 +118,19 @@ namespace MyProstateRejectsCapitalism.Gameplay
                 restartButton.onClick.AddListener(Restart);
             if (quitButton != null)
                 quitButton.onClick.AddListener(Quit);
+            if (limitSettings != null)
+                gameObject.AddComponent<ProstateLimit>().Initialize(this, player, dialogue, limitSettings,
+                    restartOnFall, fallBelowY);
         }
 
         private IEnumerator Start()
         {
             if (!fadeOnArrival)
                 yield break;
-            yield return FadeTo(0f, 0.25f);
+            // Scene activation may consume an entire frame. Draw the destination black
+            // before starting the reveal, and do not charge stalled frames to that fade.
+            yield return null;
+            yield return FadeTo(fade, 0f, 0.25f, limitFrameStep: true);
             IsTransitioning = false;
             player.SetInputBlocked(false);
         }
@@ -138,44 +151,78 @@ namespace MyProstateRejectsCapitalism.Gameplay
                 StartCoroutine(ShowEnding());
         }
 
-        public bool TryLeave(FirstPersonPlayer owner)
+        public bool TryLeave(FirstPersonPlayer owner) => Ready && TryTransition(owner, nextScene);
+
+        internal bool TryTransition(FirstPersonPlayer owner, string sceneName)
         {
-            if (owner != player || !owner.CanControl || !Ready || IsEndingVisible)
+            if (owner != player || !owner.CanControl || dialogue.IsInteractive || IsTransitioning || IsEndingVisible)
                 return false;
-            if (!Application.CanStreamedLevelBeLoaded(nextScene))
+            if (!Application.CanStreamedLevelBeLoaded(sceneName))
             {
-                Debug.LogError("Next scene is missing from the build: " + nextScene, this);
+                Debug.LogError("Next scene is missing from the build: " + sceneName, this);
                 return false;
             }
 
+            dialogue.StopAutomatic();
             IsTransitioning = true;
             player.SetInputBlocked(true);
-            StartCoroutine(LoadNext(nextScene));
+            StartCoroutine(LoadNext(fade, sceneName));
             return true;
         }
 
-        private IEnumerator LoadNext(string sceneName)
+        internal static IEnumerator LoadNext(CanvasGroup fade, string sceneName, IEnumerator leadIn = null,
+            Action onCovered = null)
         {
-            yield return FadeTo(1f, 0.3f);
+            if (leadIn != null)
+                yield return leadIn;
+            if (fade.alpha < 1f)
+                yield return FadeTo(fade, 1f, 0.3f, limitFrameStep: true);
+            // Present the fully covered source before Unity begins loading/activating.
+            yield return null;
+            onCovered?.Invoke();
             yield return SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+        }
+
+        internal bool TryRecover(string sceneName, Func<CanvasGroup, IEnumerator> leadIn = null, Action onCovered = null)
+        {
+            if (!TracksLimit || player.IsPaused || !Application.CanStreamedLevelBeLoaded(sceneName))
+                return false;
+
+            IsTransitioning = true;
+            dialogue.enabled = false;
+            player.SetInputBlocked(true);
+            if (fade.transform.parent == gameplayCanvas.transform)
+            {
+                foreach (Transform item in gameplayCanvas.transform)
+                    if (item != fade.transform)
+                        item.gameObject.SetActive(false);
+                fade.transform.SetAsLastSibling();
+            }
+            else
+            {
+                gameplayCanvas.enabled = false;
+            }
+            StartCoroutine(LoadNext(fade, sceneName, leadIn?.Invoke(fade), onCovered));
+            return true;
         }
 
         private IEnumerator ShowEnding()
         {
             IsTransitioning = true;
             player.SetInputBlocked(true);
-            yield return FadeTo(1f, 0.6f);
+            yield return FadeTo(fade, 1f, 0.6f);
             gameplayCanvas.enabled = false;
             endingPanel.SetActive(true);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
         }
 
-        private IEnumerator FadeTo(float target, float seconds)
+        internal static IEnumerator FadeTo(CanvasGroup fade, float target, float seconds, bool limitFrameStep = false)
         {
             var from = fade.alpha;
             fade.blocksRaycasts = true;
-            for (var elapsed = 0f; elapsed < seconds; elapsed += Time.unscaledDeltaTime)
+            for (var elapsed = 0f; elapsed < seconds;
+                elapsed += limitFrameStep ? Mathf.Min(Time.unscaledDeltaTime, 1f / 30f) : Time.unscaledDeltaTime)
             {
                 fade.alpha = Mathf.Lerp(from, target, elapsed / seconds);
                 yield return null;
@@ -196,9 +243,13 @@ namespace MyProstateRejectsCapitalism.Gameplay
 
             restartButton.interactable = false;
             quitButton.interactable = false;
+            ProstateLimit.ResetRun();
             IsTransitioning = true;
             player.SetInputBlocked(true);
-            StartCoroutine(LoadNext(firstScene));
+            // The receipt starts above the dark backdrop. Cover it when leaving the ending.
+            fade.transform.SetAsLastSibling();
+            fade.alpha = 0f;
+            StartCoroutine(LoadNext(fade, firstScene));
         }
 
         public void Quit()

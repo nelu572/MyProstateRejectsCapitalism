@@ -240,7 +240,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
             else if (began && (dialogue.IsPlaying || player.InputBlocked))
                 interaction.text = string.Empty;
             else if (interactor.CurrentTarget is PaidToiletEvent)
-                interaction.text = "E   결제하기 · 500원";
+                interaction.text = PlayerInteractor.InputPrompt + "결제하기 · 500원";
 
             crosshair.text = "·";
             crosshair.color = new Color(1f, 1f, 1f, interactor.CurrentTarget != null ? .7f : .28f);
@@ -265,7 +265,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
         {
             if (!compactDialogueHints)
             {
-                hint.text = dialogue.IsTyping ? "E / 클릭   바로 표시" : "E / 클릭   계속";
+                hint.text = dialogue.IsTyping ? "클릭 — 대사 전체 표시" : "클릭 — 다음 대사";
                 if (polishedPresentation)
                     hint.alpha = Mathf.MoveTowards(hint.alpha, .9f, Time.unscaledDeltaTime / .18f);
                 return;
@@ -277,7 +277,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
             if (firstDialogueHint != null)
             {
                 string notice = ready && !guidanceDismissed && Time.unscaledTime - guidanceStartedAt >= 3f
-                    ? "E / 클릭: 완성·진행" : string.Empty;
+                    ? "클릭 — 다음 대사" : string.Empty;
                 firstDialogueHint.text = notice;
                 firstDialogueHint.alpha = notice.Length > 0 ? .9f : 0f;
                 hint.rectTransform.anchoredPosition = new Vector2(notice.Length > 0

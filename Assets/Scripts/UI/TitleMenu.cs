@@ -1,3 +1,4 @@
+using MyProstateRejectsCapitalism.Gameplay;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -118,6 +119,7 @@ namespace MyProstateRejectsCapitalism.UI
             if (!CanStart())
                 return;
             loading = true;
+            ProstateLimit.ResetRun();
             MenuSettings.Save();
             SceneManager.LoadSceneAsync(StartScene);
         }

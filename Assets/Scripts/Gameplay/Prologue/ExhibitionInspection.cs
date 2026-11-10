@@ -113,7 +113,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
         {
             result = null;
             if (!isActiveAndEnabled || phase != Phase.Idle || restoredFrame == Time.frameCount
-                || dialogue.IsPlaying || !body.isGrounded || !interactor.TryGetAimHit(out var aim))
+                || dialogue.IsInteractive || !body.isGrounded || !interactor.TryGetAimHit(out var aim))
                 return false;
 
             foreach (var exhibit in exhibits)
@@ -148,6 +148,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
             if (lines.Length != 4)
                 return;
 
+            dialogue.StopAutomatic();
             viewCamera = player.ViewCamera;
             var view = viewCamera.transform;
             originalLocalPose = new Pose(view.localPosition, view.localRotation);

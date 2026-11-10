@@ -1,4 +1,6 @@
 using MyProstateRejectsCapitalism.Characters;
+using MyProstateRejectsCapitalism.Dialogue;
+using MyProstateRejectsCapitalism.Gameplay;
 using MyProstateRejectsCapitalism.Interaction;
 using TMPro;
 using UnityEngine;
@@ -15,14 +17,22 @@ namespace MyProstateRejectsCapitalism.UI
         [SerializeField] private TMP_Text interactionLabel;
         [SerializeField] private TMP_Text crosshairLabel;
         [SerializeField] private string initialObjective = "유료 화장실을 찾아 이용해 보자.";
+        [SerializeField] private Collider advertisingGate;
+        [SerializeField] private DialogueController advertisingDialogue;
+        [SerializeField] private SliceActFlow advertisingFlow;
+        [SerializeField] private GameObject[] signsAfterAdvertising = System.Array.Empty<GameObject>();
+        private TMP_Text controlsLabel;
+        private ProstateLimitGauge prostateLimitGauge;
         private GameObject cursorResumeHint;
+        private readonly Plane[] advertisingViewPlanes = new Plane[6];
+        private bool advertisingSignsRevealed;
 
         private void Start()
         {
             SetObjective(initialObjective);
             foreach (var label in GetComponentsInChildren<TMP_Text>(true))
                 if (label.name == "Controls")
-                    label.text = label.text.Replace("E 확인", "클릭 / E 확인");
+                    controlsLabel = label;
             CreateCursorResumeHint();
         }
 
@@ -31,8 +41,26 @@ namespace MyProstateRejectsCapitalism.UI
             objectiveLabel.text = "목표: " + objective;
         }
 
+        internal void SetProstateLimit(bool visible, float remaining, ProstateLimitGaugeLayout layout)
+        {
+            if (visible && (prostateLimitGauge == null || prostateLimitGauge.Layout != layout))
+            {
+                if (prostateLimitGauge != null)
+                {
+                    prostateLimitGauge.Root.SetActive(false);
+                    Destroy(prostateLimitGauge.Root);
+                }
+                prostateLimitGauge = new ProstateLimitGauge(objectiveLabel.rectTransform.parent,
+                    objectiveLabel.font, layout);
+            }
+            prostateLimitGauge?.Update(visible, remaining);
+        }
+
         private void LateUpdate()
         {
+            if (advertisingGate != null)
+                UpdateAdvertisingGuidance();
+
             if (cursorResumeHint.activeSelf != player.NeedsCursorCapture)
                 cursorResumeHint.SetActive(player.NeedsCursorCapture);
 
@@ -47,6 +75,28 @@ namespace MyProstateRejectsCapitalism.UI
             var usable = target != null && target.gameObject.activeInHierarchy
                 && (!(target is Behaviour behaviour) || behaviour.isActiveAndEnabled);
             interactionLabel.text = usable ? PlayerInteractor.InputPrompt + interactor.CurrentTarget.InteractionPrompt : string.Empty;
+        }
+
+        private void UpdateAdvertisingGuidance()
+        {
+            if (!advertisingSignsRevealed && advertisingFlow != null && advertisingFlow.Ready)
+            {
+                foreach (var sign in signsAfterAdvertising)
+                    if (sign != null)
+                        sign.SetActive(true);
+                advertisingSignsRevealed = true;
+            }
+
+            var camera = player.ViewCamera;
+            var gate = advertisingGate.bounds;
+            bool close = gate.SqrDistance(camera.transform.position) <= 3.6f * 3.6f;
+            GeometryUtility.CalculateFrustumPlanes(camera, advertisingViewPlanes);
+            bool gateInView = GeometryUtility.TestPlanesAABB(advertisingViewPlanes, gate);
+            bool hideInstructions = (close && gateInView)
+                || (advertisingDialogue != null && advertisingDialogue.IsInteractive);
+            objectiveLabel.enabled = !hideInstructions;
+            if (controlsLabel != null)
+                controlsLabel.enabled = !hideInstructions;
         }
 
         private void CreateCursorResumeHint()

@@ -1747,8 +1747,8 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "WASD \uC774\uB3D9 | \uB9C8\uC6B0\uC2A4 \uC2DC\uC810 | E \uD655\uC778 /
-    \uC774\uB3D9 | Esc \uCEE4\uC11C \uD574\uC81C"
+  m_text: "WASD \uC774\uB3D9  |  \uB9C8\uC6B0\uC2A4 \uC2DC\uC810  |  \uD074\uB9AD
+    \uC0C1\uD638\uC791\uC6A9  |  Space \uC810\uD504  |  Esc \uC77C\uC2DC\uC815\uC9C0"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: dce87592bf099cd4287fbc8f36507ae0, type: 2}
   m_sharedMaterial: {fileID: 6730227838834453832, guid: dce87592bf099cd4287fbc8f36507ae0, type: 2}
@@ -3130,6 +3130,9 @@ MonoBehaviour:
   endingPanel: {fileID: 1150148262}
   restartButton: {fileID: 1774953571}
   quitButton: {fileID: 520202079}
+  limitSettings: {fileID: 11400000, guid: 8ed0c9b82129d824fbd3bfacfec64708, type: 2}
+  restartOnFall: 0
+  fallBelowY: -2.75
 --- !u!4 &498245406
 Transform:
   m_ObjectHideFlags: 0
@@ -12014,6 +12017,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: FirstPersonPlayer
       objectReference: {fileID: 0}
+    - target: {fileID: 4103913524601063950, guid: ccde3728dcef55646bfcc50ec605791b, type: 3}
+      propertyPath: enableJump
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6273203909736390498, guid: ccde3728dcef55646bfcc50ec605791b, type: 3}
       propertyPath: showDefaultHud
       value: 0
@@ -15654,6 +15661,10 @@ MonoBehaviour:
   crosshairLabel: {fileID: 2066828074}
   initialObjective: "\uB4DC\uB514\uC5B4 \uB3C4\uCC29\uD588\uB2E4. \uBB34\uB8CC \uD654\uC7A5\uC2E4
     \uBB38\uC744 \uC5F4\uC790."
+  advertisingGate: {fileID: 0}
+  advertisingDialogue: {fileID: 0}
+  advertisingFlow: {fileID: 0}
+  signsAfterAdvertising: []
 --- !u!114 &2132330443
 MonoBehaviour:
   m_ObjectHideFlags: 0

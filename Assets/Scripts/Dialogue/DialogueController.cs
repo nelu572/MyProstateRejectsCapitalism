@@ -5,7 +5,6 @@ using MyProstateRejectsCapitalism.Characters;
 using MyProstateRejectsCapitalism.UI;
 using TMPro;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace MyProstateRejectsCapitalism.Dialogue
 {
@@ -52,6 +51,8 @@ namespace MyProstateRejectsCapitalism.Dialogue
         }
 
         public bool IsPlaying => sequence != null;
+        internal bool IsAutomatic { get; private set; }
+        internal bool IsInteractive => IsPlaying && !IsAutomatic;
         public bool AllowsMovement { get; private set; }
         public int CurrentLineIndex { get; private set; }
 
@@ -166,18 +167,33 @@ namespace MyProstateRejectsCapitalism.Dialogue
 
         public bool TryStart(DialogueSequence dialogue, FirstPersonPlayer owner, Action completed,
             bool allowMovement = false)
+            => StartSequence(dialogue, owner, completed, allowMovement, automatic: false);
+
+        internal bool TryStartAutomatic(DialogueSequence dialogue, FirstPersonPlayer owner)
+            => StartSequence(dialogue, owner, null, allowMovement: true, automatic: true);
+
+        internal void StopAutomatic()
         {
-            if (!isActiveAndEnabled || IsPlaying || owner == null || owner.InputBlocked
+            if (IsAutomatic)
+                Finish(false);
+        }
+
+        private bool StartSequence(DialogueSequence dialogue, FirstPersonPlayer owner, Action completed,
+            bool allowMovement, bool automatic)
+        {
+            if (!isActiveAndEnabled || IsInteractive || (automatic && IsPlaying) || owner == null || owner.InputBlocked
                 || dialogue == null || dialogue.Lines == null || dialogue.Lines.Length == 0
                 || dialoguePanel == null || speakerLabel == null || dialogueLabel == null)
                 return false;
 
+            StopAutomatic();
             sequence = dialogue;
             player = owner;
             onCompleted = completed;
             CurrentLineIndex = 0;
             lastAdvanceFrame = Time.frameCount;
             LastDialogueCompleted = false;
+            IsAutomatic = automatic;
             AllowsMovement = allowMovement;
             if (!allowMovement)
                 player.SetInputBlocked(true, allowCursorCapture: true);
@@ -191,7 +207,8 @@ namespace MyProstateRejectsCapitalism.Dialogue
             if (!IsPlaying || player.IsPaused)
                 return;
 
-            player.ReserveDialogueInputFrame();
+            if (!IsAutomatic)
+                player.ReserveDialogueInputFrame();
             bool wasTyping = IsTyping;
             if (wasTyping)
             {
@@ -200,15 +217,22 @@ namespace MyProstateRejectsCapitalism.Dialogue
             }
 
             if (compactAdvanceHint != null)
-                compactAdvanceHint.text = CanAdvance ? "▾" : string.Empty;
+                compactAdvanceHint.text = !IsAutomatic && CanAdvance ? "▾" : string.Empty;
+
+            if (IsAutomatic)
+            {
+                if (!IsTyping && holdUntil == 0f)
+                    HoldCurrentLine(Mathf.Clamp(characterCount * .065f, 1.45f, 2.8f));
+                if (CanAdvance)
+                    AdvanceLine();
+                return;
+            }
 
             // The click that recaptures the cursor belongs to the player, regardless of Update order.
             if (Time.frameCount <= lastAdvanceFrame || !player.AcceptsDialogueInput)
                 return;
 
-            var pressedE = Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
-            var clicked = Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
-            if (!pressedE && !clicked)
+            if (!player.InteractionClickPressed)
                 return;
             DialogueInput?.Invoke();
             if (!wasTyping && !CanAdvance)
@@ -221,6 +245,11 @@ namespace MyProstateRejectsCapitalism.Dialogue
                 return;
             }
 
+            AdvanceLine();
+        }
+
+        private void AdvanceLine()
+        {
             CurrentLineIndex++;
             if (CurrentLineIndex >= sequence.Lines.Length)
                 Finish(true);
@@ -393,10 +422,11 @@ namespace MyProstateRejectsCapitalism.Dialogue
             }
             if (dialoguePanel != null)
                 dialoguePanel.SetActive(false);
-            if (player != null)
+            if (player != null && !IsAutomatic)
                 player.SetInputBlocked(false);
             player = null;
             AllowsMovement = false;
+            IsAutomatic = false;
             DialogueFinished?.Invoke();
             if (completed)
                 callback?.Invoke();

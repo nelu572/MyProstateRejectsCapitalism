@@ -16,8 +16,13 @@ namespace MyProstateRejectsCapitalism.UI
         private FirstPersonPlayer player;
         private ExhibitionInspection inspection;
         private SliceActFlow flow;
+        private ClassroomToRestroomPrologue prologue;
         private ActOneFirstEncounter encounter;
         private DialogueController dialogue;
+        private Canvas hudCanvas;
+        private Canvas dialogueCanvas;
+        private bool restoreHudCanvas;
+        private bool restoreDialogueCanvas;
         private RectTransform surface;
         private RectTransform front;
         private RectTransform settings;
@@ -62,8 +67,11 @@ namespace MyProstateRejectsCapitalism.UI
             player = GetComponent<FirstPersonPlayer>();
             inspection = GetComponent<ExhibitionInspection>();
             flow = FindFirstObjectByType<SliceActFlow>();
+            prologue = FindFirstObjectByType<ClassroomToRestroomPrologue>();
             encounter = FindFirstObjectByType<ActOneFirstEncounter>();
             dialogue = FindFirstObjectByType<DialogueController>();
+            hudCanvas = FindFirstObjectByType<PrototypeHud>()?.GetComponentInParent<Canvas>();
+            dialogueCanvas = dialogue?.GetComponentInParent<Canvas>();
         }
 
         private void Update()
@@ -81,6 +89,7 @@ namespace MyProstateRejectsCapitalism.UI
                     Resume();
             }
             else if ((flow == null || (!flow.IsTransitioning && !flow.IsEndingVisible))
+                && (prologue == null || prologue.WakeComplete)
                 && (encounter == null || !encounter.IsPaying))
                 Pause();
         }
@@ -92,6 +101,8 @@ namespace MyProstateRejectsCapitalism.UI
             previousTimeScale = Time.timeScale;
             player.SetPaused(true);
             Time.timeScale = 0f;
+            restoreHudCanvas = HideCanvas(hudCanvas);
+            restoreDialogueCanvas = HideCanvas(dialogueCanvas);
             surface.gameObject.SetActive(true);
         }
 
@@ -102,7 +113,25 @@ namespace MyProstateRejectsCapitalism.UI
             MenuSettings.Save();
             surface.gameObject.SetActive(false);
             Time.timeScale = previousTimeScale;
+            RestoreGameplayPresentation();
             player.SetPaused(false);
+        }
+
+        private static bool HideCanvas(Canvas canvas)
+        {
+            if (canvas == null || !canvas.enabled)
+                return false;
+            canvas.enabled = false;
+            return true;
+        }
+
+        private void RestoreGameplayPresentation()
+        {
+            if (restoreHudCanvas && hudCanvas != null)
+                hudCanvas.enabled = true;
+            if (restoreDialogueCanvas && dialogueCanvas != null)
+                dialogueCanvas.enabled = true;
+            restoreHudCanvas = restoreDialogueCanvas = false;
         }
 
         private void Build()
@@ -120,6 +149,8 @@ namespace MyProstateRejectsCapitalism.UI
 
         private void OpenSettings()
         {
+            if (returningToTitle)
+                return;
             backdrop.color = SettingsShade;
             front.gameObject.SetActive(false);
             settings.gameObject.SetActive(true);
@@ -144,7 +175,15 @@ namespace MyProstateRejectsCapitalism.UI
             }
             returningToTitle = true;
             MenuSettings.Save();
-            SceneManager.LoadSceneAsync(TitleMenu.SceneName);
+
+            // Cover the pause canvas itself while gameplay and its time scale remain paused.
+            var curtain = MenuUi.Rect(surface, "Return to title fade", 0f, 0f, 0f, 0f);
+            curtain.anchorMin = Vector2.zero;
+            curtain.anchorMax = Vector2.one;
+            curtain.gameObject.AddComponent<Image>().color = Color.black;
+            var fade = curtain.gameObject.AddComponent<CanvasGroup>();
+            fade.alpha = 0f;
+            StartCoroutine(SliceActFlow.LoadNext(fade, TitleMenu.SceneName));
         }
 
         private void OnDestroy()
@@ -153,6 +192,7 @@ namespace MyProstateRejectsCapitalism.UI
                 Time.timeScale = 1f;
             else if (player != null && player.IsPaused)
                 Time.timeScale = previousTimeScale;
+            RestoreGameplayPresentation();
             if (surface != null)
                 Destroy(surface.gameObject);
         }

@@ -65,7 +65,7 @@ namespace MyProstateRejectsCapitalism.Characters
                 horizontalVelocity = Vector3.zero;
             if (!blocked)
                 DialogueLookAllowed = false;
-            // Do not reuse the dialogue's closing E/click as gameplay input in the same frame.
+            // Do not reuse the dialogue's closing click as gameplay input in the same frame.
             if (!blocked)
                 cursorLockedFrame = Time.frameCount;
         }
@@ -116,10 +116,12 @@ namespace MyProstateRejectsCapitalism.Characters
             verticalVelocity = 0f;
         }
 
-        // Sample one press for both bindings. Cursor capture and dialogue reserve their input frame.
+        internal bool InteractionClickPressed => interactAction?.WasPressedThisFrame() == true;
+
+        // Cursor capture and dialogue reserve their input frame.
         public bool InteractionPressedThisFrame => CanControl && !EscapePressed
             && Time.frameCount != dialogueInputFrame
-            && (interactAction.WasPressedThisFrame() || Mouse.current?.leftButton.wasPressedThisFrame == true);
+            && InteractionClickPressed;
 
         internal void ReserveDialogueInputFrame() => dialogueInputFrame = Time.frameCount;
 
@@ -143,7 +145,7 @@ namespace MyProstateRejectsCapitalism.Characters
             moveAction = playerMap.FindAction("Move", true);
             lookAction = playerMap.FindAction("Look", true);
             interactAction = playerMap.FindAction("Interact", true);
-            jumpAction = playerMap.FindAction("Jump", false);
+            jumpAction = playerMap.FindAction("Jump", true);
             pitch = Mathf.DeltaAngle(0f, viewCamera.transform.localEulerAngles.x);
         }
 
@@ -155,7 +157,7 @@ namespace MyProstateRejectsCapitalism.Characters
             moveAction.Enable();
             lookAction.Enable();
             interactAction.Enable();
-            jumpAction?.Enable();
+            jumpAction.Enable();
             SetCursorLocked(true);
         }
 
@@ -194,8 +196,7 @@ namespace MyProstateRejectsCapitalism.Characters
                 if (!TryGetComponent<PauseMenu>(out _))
                     SetCursorLocked(false);
             }
-            else if (NeedsCursorCapture && Mouse.current != null
-                && Mouse.current.leftButton.wasPressedThisFrame)
+            else if (NeedsCursorCapture && InteractionClickPressed)
                 SetCursorLocked(true);
 
             var movement = Vector3.zero;
@@ -233,13 +234,12 @@ namespace MyProstateRejectsCapitalism.Characters
 
             if (grounded && verticalVelocity < 0f)
                 verticalVelocity = -2f;
-            if (CanControl && enableJump && grounded && jumpAction != null && jumpAction.WasPressedThisFrame())
+            if (CanControl && enableJump && grounded && jumpAction.WasPressedThisFrame())
                 verticalVelocity = Mathf.Sqrt(2f * Mathf.Max(.1f, gravity) * jumpHeight);
             float previousVerticalVelocity = verticalVelocity;
             verticalVelocity = Mathf.Max(verticalVelocity - gravity * Time.deltaTime, -50f);
-            movement.y = useMovementTuning
-                ? (previousVerticalVelocity + verticalVelocity) * .5f
-                : verticalVelocity;
+            // Integrate gravity over this frame instead of moving at the end-of-frame speed.
+            movement.y = (previousVerticalVelocity + verticalVelocity) * .5f;
             var collisions = controller.Move(movement * Time.deltaTime);
             if ((collisions & CollisionFlags.Above) != 0 && verticalVelocity > 0f)
                 verticalVelocity = 0f;

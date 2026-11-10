@@ -116,7 +116,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
                 quietUntil = Time.time + .65f;
             }
             hint.text = player.CanControl && ReferenceEquals(interactor.CurrentTarget, door) && !door.IsOpen && !door.IsOpening
-                ? "E — " + door.InteractionPrompt : ClosedRestroomHint();
+                ? PlayerInteractor.InputPrompt + door.InteractionPrompt : ClosedRestroomHint();
             if (!player.CanControl)
                 return;
             freeSeconds += Time.deltaTime;
@@ -237,13 +237,13 @@ namespace MyProstateRejectsCapitalism.Gameplay
             if (!player.CanControl)
                 return string.Empty;
             if (interactor.CurrentTarget is ClosedRestroomDoor closed)
-                return "E — " + closed.InteractionPrompt;
+                return PlayerInteractor.InputPrompt + closed.InteractionPrompt;
             if (interactor.CurrentTarget is PrologueExhibitionDoor exhibition && !exhibition.IsOpen)
-                return "E — " + exhibition.InteractionPrompt;
+                return PlayerInteractor.InputPrompt + exhibition.InteractionPrompt;
             if (interactor.CurrentTarget is LevelExperimentInteraction exhibit)
-                return "E — " + exhibit.InteractionPrompt;
+                return PlayerInteractor.InputPrompt + exhibit.InteractionPrompt;
             if (interactor.CurrentTarget is SliceExit exit)
-                return "E — " + exit.InteractionPrompt;
+                return PlayerInteractor.InputPrompt + exit.InteractionPrompt;
             return string.Empty;
         }
 
