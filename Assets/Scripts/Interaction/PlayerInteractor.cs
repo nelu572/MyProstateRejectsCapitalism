@@ -7,6 +7,7 @@ namespace MyProstateRejectsCapitalism.Interaction
     [RequireComponent(typeof(FirstPersonPlayer))]
     public sealed class PlayerInteractor : MonoBehaviour
     {
+        internal const string InputPrompt = "클릭 / E - ";
         [SerializeField, Min(0.1f)] private float interactionDistance = 3f;
         [SerializeField] private LayerMask interactionMask = Physics.DefaultRaycastLayers;
         [SerializeField] private bool showDefaultHud = true;
@@ -26,15 +27,20 @@ namespace MyProstateRejectsCapitalism.Interaction
             CurrentTarget = null;
         }
 
+        internal bool TryGetAimHit(out RaycastHit hit)
+        {
+            hit = default;
+            if (!isActiveAndEnabled || !player.CanControl || player.ViewCamera == null)
+                return false;
+
+            var ray = player.ViewCamera.ViewportPointToRay(new Vector3(.5f, .5f));
+            return Physics.Raycast(ray, out hit, interactionDistance, interactionMask, QueryTriggerInteraction.Ignore);
+        }
+
         private void LateUpdate()
         {
             CurrentTarget = null;
-            if (!player.CanControl || player.ViewCamera == null)
-                return;
-
-            var ray = player.ViewCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f));
-            if (!Physics.Raycast(ray, out var hit, interactionDistance, interactionMask,
-                QueryTriggerInteraction.Ignore))
+            if (!TryGetAimHit(out var hit))
                 return;
 
             var target = hit.collider.GetComponentInParent<IInteractable>();
@@ -75,7 +81,7 @@ namespace MyProstateRejectsCapitalism.Interaction
             {
                 var rect = new Rect(Screen.width / 2f - 180f, Screen.height - 90f, 360f, 44f);
                 GUI.Box(rect, GUIContent.none);
-                GUI.Label(rect, "E - " + CurrentTarget.InteractionPrompt, labelStyle);
+                GUI.Label(rect, InputPrompt + CurrentTarget.InteractionPrompt, labelStyle);
             }
         }
     }

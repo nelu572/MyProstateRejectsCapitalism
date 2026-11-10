@@ -17,6 +17,8 @@ namespace MyProstateRejectsCapitalism.Dialogue
         [SerializeField, Min(1f)] private float charactersPerSecond = 55f;
         [SerializeField] private bool centerVisibleTyping;
         [SerializeField] private bool wordWrappedSubtitles;
+        [SerializeField] private TMP_Text compactAdvanceHint;
+
         private struct TypingLine
         {
             public float min, max, offset;
@@ -57,6 +59,8 @@ namespace MyProstateRejectsCapitalism.Dialogue
         {
             if (dialoguePanel != null)
                 dialoguePanel.SetActive(false);
+            if (compactAdvanceHint != null)
+                compactAdvanceHint.alpha = .9f;
         }
 
         private void OnEnable()
@@ -75,7 +79,8 @@ namespace MyProstateRejectsCapitalism.Dialogue
         {
             centeringNeedsUpdate = false;
             if (!centerVisibleTyping || !IsPlaying || (wordWrappedSubtitles && info.lineCount > 1)
-                || dialogueLabel.maxVisibleCharacters >= info.characterCount)
+                || dialogueLabel.maxVisibleCharacters == int.MaxValue
+                || (dialogueLabel.maxVisibleCharacters >= info.characterCount && typingLines == null))
                 return;
 
             if (typingLines == null || typingLines.Length != info.lineCount)
@@ -97,7 +102,7 @@ namespace MyProstateRejectsCapitalism.Dialogue
                 typingLines[line].max = Mathf.Max(typingLines[line].max, character.topRight.x);
             }
             float blend = centeringFrame == Time.frameCount ? 0f
-                : 1f - Mathf.Exp(-Time.unscaledDeltaTime / .012f);
+                : 1f - Mathf.Exp(-Time.unscaledDeltaTime / .016f);
             centeringFrame = Time.frameCount;
             for (int i = 0; i < typingLines.Length; i++)
             {
@@ -112,11 +117,19 @@ namespace MyProstateRejectsCapitalism.Dialogue
                 bool complete = dialogueLabel.maxVisibleCharacters > layout.lastVisibleCharacterIndex;
                 float target = complete ? 0f
                     : (layout.lineExtents.min.x + layout.lineExtents.max.x - line.min - line.max) * .5f;
-                // Snap the first glyph into place; soften subsequent half-glyph shifts briefly.
-                line.offset = !line.initialized || complete ? target : Mathf.Lerp(line.offset, target, blend);
+                // Center the first glyph immediately, then briefly ease toward each new center.
+                line.offset = !line.initialized ? target : Mathf.Lerp(line.offset, target, blend);
+                if (Mathf.Abs(line.offset - target) <= .05f)
+                    line.offset = target;
                 line.initialized = true;
                 centeringNeedsUpdate |= Mathf.Abs(line.offset - target) > .05f;
             }
+            if (!centeringNeedsUpdate && dialogueLabel.maxVisibleCharacters >= info.characterCount)
+            {
+                typingLines = null;
+                return;
+            }
+
             // Include underline, highlight and fallback-font quads, not only character quads.
             for (int m = 0; m < info.materialCount; m++)
             {
@@ -178,12 +191,16 @@ namespace MyProstateRejectsCapitalism.Dialogue
             if (!IsPlaying || player.IsPaused)
                 return;
 
+            player.ReserveDialogueInputFrame();
             bool wasTyping = IsTyping;
             if (wasTyping)
             {
                 visibleCharacters += Time.deltaTime * Mathf.Max(1f, SubtitleSpeed);
                 dialogueLabel.maxVisibleCharacters = Mathf.Min(characterCount, Mathf.FloorToInt(visibleCharacters));
             }
+
+            if (compactAdvanceHint != null)
+                compactAdvanceHint.text = CanAdvance ? "▾" : string.Empty;
 
             // The click that recaptures the cursor belongs to the player, regardless of Update order.
             if (Time.frameCount <= lastAdvanceFrame || !player.AcceptsDialogueInput)
@@ -213,6 +230,8 @@ namespace MyProstateRejectsCapitalism.Dialogue
 
         private void RevealCurrentLine()
         {
+            typingLines = null;
+            centeringNeedsUpdate = false;
             visibleCharacters = characterCount;
             dialogueLabel.maxVisibleCharacters = characterCount;
         }
@@ -239,9 +258,29 @@ namespace MyProstateRejectsCapitalism.Dialogue
             visibleCharacters = 0f;
             holdUntil = 0f;
             dialogueLabel.maxVisibleCharacters = 0;
+            if (compactAdvanceHint != null)
+            {
+                compactAdvanceHint.text = string.Empty;
+                FitCompactPanel(dialogueLabel, speakerLabel, (RectTransform)dialoguePanel.transform);
+                ApplyPolishedColors(speakerLabel, dialogueLabel, line.speaker == "???" || line.speaker == "전립선");
+            }
             LineShown?.Invoke(CurrentLineIndex);
             if (wordWrappedSubtitles)
                 dialogueLabel.overflowMode = overflow;
+        }
+
+        internal static void FitCompactPanel(TMP_Text line, TMP_Text speaker, RectTransform panel)
+        {
+            float height = Mathf.Ceil(line.preferredHeight) + 2f;
+            line.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+            speaker.rectTransform.anchoredPosition = new Vector2(0f, 44f + height + 10f);
+            panel.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, 44f + height + 10f + 24f);
+        }
+
+        internal static void ApplyPolishedColors(TMP_Text speaker, TMP_Text line, bool companion)
+        {
+            speaker.color = companion ? new Color(.82f, .88f, .89f) : new Color(.86f, .85f, .81f);
+            line.color = companion ? new Color(.88f, .94f, .94f) : new Color(.96f, .95f, .91f);
         }
 
         private struct SubtitleWord

@@ -14,6 +14,7 @@ namespace MyProstateRejectsCapitalism.UI
     public sealed class PauseMenu : MonoBehaviour
     {
         private FirstPersonPlayer player;
+        private ExhibitionInspection inspection;
         private SliceActFlow flow;
         private ActOneFirstEncounter encounter;
         private DialogueController dialogue;
@@ -24,6 +25,10 @@ namespace MyProstateRejectsCapitalism.UI
         private static readonly Color SettingsShade = new(0f, .03f, .025f, .72f);
         private float previousTimeScale;
         private bool returningToTitle;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        internal bool IsReturningToTitle => returningToTitle;
+#endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void InstallForGame()
@@ -55,6 +60,7 @@ namespace MyProstateRejectsCapitalism.UI
         private void Awake()
         {
             player = GetComponent<FirstPersonPlayer>();
+            inspection = GetComponent<ExhibitionInspection>();
             flow = FindFirstObjectByType<SliceActFlow>();
             encounter = FindFirstObjectByType<ActOneFirstEncounter>();
             dialogue = FindFirstObjectByType<DialogueController>();
@@ -63,6 +69,8 @@ namespace MyProstateRejectsCapitalism.UI
         private void Update()
         {
             if (returningToTitle || Keyboard.current == null || !Keyboard.current.escapeKey.wasPressedThisFrame)
+                return;
+            if (inspection != null && inspection.SuppressesPause)
                 return;
 
             if (player.IsPaused)

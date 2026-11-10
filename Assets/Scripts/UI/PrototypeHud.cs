@@ -20,6 +20,9 @@ namespace MyProstateRejectsCapitalism.UI
         private void Start()
         {
             SetObjective(initialObjective);
+            foreach (var label in GetComponentsInChildren<TMP_Text>(true))
+                if (label.name == "Controls")
+                    label.text = label.text.Replace("E 확인", "클릭 / E 확인");
             CreateCursorResumeHint();
         }
 
@@ -43,7 +46,7 @@ namespace MyProstateRejectsCapitalism.UI
             var target = interactor.CurrentTarget as Component;
             var usable = target != null && target.gameObject.activeInHierarchy
                 && (!(target is Behaviour behaviour) || behaviour.isActiveAndEnabled);
-            interactionLabel.text = usable ? "E - " + interactor.CurrentTarget.InteractionPrompt : string.Empty;
+            interactionLabel.text = usable ? PlayerInteractor.InputPrompt + interactor.CurrentTarget.InteractionPrompt : string.Empty;
         }
 
         private void CreateCursorResumeHint()

@@ -52,10 +52,8 @@ namespace MyProstateRejectsCapitalism.Gameplay
         private float originalVignette;
         private bool originalVignetteOverride;
         private bool firstDialogueStarted;
-        private bool guidanceShown;
         private bool guidanceDismissed;
         private float guidanceStartedAt;
-        private float guidanceUntil;
 
         public bool HasBegun => began;
         public bool IsPaying => payment;
@@ -140,23 +138,20 @@ namespace MyProstateRejectsCapitalism.Gameplay
                 if (firstDialogueHint != null)
                     firstDialogueHint.text = string.Empty;
                 // Size the complete block once, before typing; its lower edge stays anchored.
-                float height = Mathf.Ceil(line.preferredHeight) + 2f;
-                line.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
-                speaker.rectTransform.anchoredPosition = new Vector2(0f, 44f + height + 10f);
-                ((RectTransform)dialogueGroup.transform).SetSizeWithCurrentAnchors(
-                    RectTransform.Axis.Vertical, 44f + height + 10f + 24f);
+                DialogueController.FitCompactPanel(line, speaker, (RectTransform)dialogueGroup.transform);
             }
             bool walkingConversation = dialogue.AllowsMovement;
             lineAppearedAt = Time.unscaledTime;
             lineFadeSeconds = polishedPresentation ? (index == 0 ? .09f : .18f) : .12f;
             dialogueGroup.alpha = 0f;
             bool unknown = speaker.text == "???" || (completeFirstMeeting && speaker.text == "전립선");
-            speaker.color = polishedPresentation
-                ? (unknown ? new Color(.82f, .88f, .89f) : new Color(.86f, .85f, .81f))
-                : (unknown ? unknownColor : new Color(.78f, .77f, .73f));
-            line.color = polishedPresentation
-                ? (unknown ? new Color(.88f, .94f, .94f) : new Color(.96f, .95f, .91f))
-                : (unknown ? unknownColor : ownColor);
+            if (polishedPresentation)
+                DialogueController.ApplyPolishedColors(speaker, line, unknown);
+            else
+            {
+                speaker.color = unknown ? unknownColor : new Color(.78f, .77f, .73f);
+                line.color = unknown ? unknownColor : ownColor;
+            }
             // A brief searching beat: look is free, movement and interaction remain reserved.
             if (!walkingConversation)
                 player.SetDialogueLookAllowed(index == 1 || (completeFirstMeeting && index >= 3));
@@ -277,17 +272,11 @@ namespace MyProstateRejectsCapitalism.Gameplay
             }
 
             bool ready = dialogue.CanAdvance;
-            if (ready && !guidanceDismissed && !guidanceShown
-                && Time.unscaledTime - guidanceStartedAt >= 3f)
-            {
-                guidanceShown = true;
-                guidanceUntil = Time.unscaledTime + 4f;
-            }
             hint.text = ready ? "▾" : string.Empty;
             hint.alpha = ready ? .9f : 0f;
             if (firstDialogueHint != null)
             {
-                string notice = ready && guidanceShown && !guidanceDismissed && Time.unscaledTime < guidanceUntil
+                string notice = ready && !guidanceDismissed && Time.unscaledTime - guidanceStartedAt >= 3f
                     ? "E / 클릭: 완성·진행" : string.Empty;
                 firstDialogueHint.text = notice;
                 firstDialogueHint.alpha = notice.Length > 0 ? .9f : 0f;

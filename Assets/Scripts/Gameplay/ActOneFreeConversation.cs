@@ -34,6 +34,8 @@ namespace MyProstateRejectsCapitalism.Gameplay
         private Location lastLocation;
         private float hintUntil;
         private float availableAfter;
+        private ExhibitionReadability exhibitionReadability;
+        private ExhibitionInspection inspection;
 
         public bool IsUnlocked { get; private set; }
         public bool IsTalking => talking;
@@ -43,6 +45,8 @@ namespace MyProstateRejectsCapitalism.Gameplay
 
         private void OnEnable()
         {
+            exhibitionReadability = FindFirstObjectByType<ExhibitionReadability>();
+            inspection = player.GetComponent<ExhibitionInspection>();
             dialogue.DialogueFinished += OnDialogueFinished;
             talkHint.text = string.Empty;
             if (unlockOnArrival)
@@ -125,9 +129,11 @@ namespace MyProstateRejectsCapitalism.Gameplay
         private void LateUpdate()
         {
             // A brief reminder on unlock/area entry, rather than permanent companion UI.
-            bool visible = CanTalk && Time.unscaledTime < hintUntil;
-            talkHint.text = visible ? "F   말 걸기" : string.Empty;
-            talkHint.alpha = Mathf.MoveTowards(talkHint.alpha, visible ? .62f : 0f,
+            bool inspectable = inspection != null && inspection.CanInspect;
+            bool visible = inspectable || (CanTalk && Time.unscaledTime < hintUntil);
+            talkHint.text = inspectable ? "F — 살펴보기" : visible ? "F   말 걸기" : string.Empty;
+            float opacity = exhibitionReadability != null && exhibitionReadability.AppliesTo(player) ? .94f : .62f;
+            talkHint.alpha = Mathf.MoveTowards(talkHint.alpha, visible ? opacity : 0f,
                 Time.unscaledDeltaTime / .2f);
         }
 

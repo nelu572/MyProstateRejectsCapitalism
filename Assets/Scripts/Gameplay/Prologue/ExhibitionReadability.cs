@@ -13,44 +13,90 @@ namespace MyProstateRejectsCapitalism.Gameplay
         [SerializeField] private TMP_Text[] labels;
 
         private Color[] originalColors;
+        private Material[] originalMaterials;
+        private Material[] galleryMaterials;
         private bool inside;
+
+        internal bool AppliesTo(FirstPersonPlayer owner) => isActiveAndEnabled && owner != null
+            && owner == player && galleryArea.Contains(owner.transform.position);
 
         private void LateUpdate()
         {
-            bool nowInside = player != null && galleryArea.Contains(player.transform.position);
+            bool nowInside = AppliesTo(player);
             if (nowInside && !inside)
-            {
-                originalColors = new Color[labels.Length];
-                for (int i = 0; i < labels.Length; i++)
-                    if (labels[i] != null)
-                        originalColors[i] = labels[i].color;
-            }
+                ApplyGalleryMaterials();
             if (!nowInside && inside)
-                RestoreColors();
+                RestoreLabels();
             inside = nowInside;
             if (!inside)
                 return;
 
             foreach (var label in labels)
                 if (label != null)
-                    label.color = new Color(.13f, .15f, .16f, label.color.a);
+                    label.color = new Color(.05f, .065f, .08f, label.color.a);
         }
 
-        private void RestoreColors()
+        private void ApplyGalleryMaterials()
         {
-            if (originalColors == null)
-                return;
+            if (galleryMaterials == null)
+            {
+                originalColors = new Color[labels.Length];
+                originalMaterials = new Material[labels.Length];
+                galleryMaterials = new Material[labels.Length];
+            }
+
+            for (int i = 0; i < labels.Length; i++)
+            {
+                var label = labels[i];
+                if (label == null)
+                    continue;
+                originalColors[i] = label.color;
+                originalMaterials[i] = label.fontSharedMaterial;
+                var source = originalMaterials[i];
+                if (source == null || !source.HasProperty("_UnderlayColor"))
+                    continue;
+                if (galleryMaterials[i] == null)
+                {
+                    var ink = new Material(source);
+                    ink.EnableKeyword("UNDERLAY_ON");
+                    ink.DisableKeyword("UNDERLAY_INNER");
+                    ink.SetColor("_UnderlayColor", new Color(1f, 1f, 1f, .82f));
+                    ink.SetFloat("_UnderlayOffsetX", 0f);
+                    ink.SetFloat("_UnderlayOffsetY", 0f);
+                    ink.SetFloat("_UnderlayDilate", .28f);
+                    ink.SetFloat("_UnderlaySoftness", .12f);
+                    if (ink.HasProperty("_FaceDilate"))
+                        ink.SetFloat("_FaceDilate", .12f);
+                    galleryMaterials[i] = ink;
+                }
+                label.fontSharedMaterial = galleryMaterials[i];
+            }
+        }
+
+        private void RestoreLabels()
+        {
             for (int i = 0; i < labels.Length; i++)
                 if (labels[i] != null)
+                {
                     labels[i].color = new Color(originalColors[i].r, originalColors[i].g,
                         originalColors[i].b, labels[i].color.a);
+                    labels[i].fontSharedMaterial = originalMaterials[i];
+                }
         }
 
         private void OnDisable()
         {
             if (inside)
-                RestoreColors();
+                RestoreLabels();
             inside = false;
+        }
+
+        private void OnDestroy()
+        {
+            if (galleryMaterials != null)
+                foreach (var material in galleryMaterials)
+                    if (material != null)
+                        Destroy(material);
         }
     }
 }

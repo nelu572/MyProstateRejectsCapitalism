@@ -44,6 +44,60 @@ namespace MyProstateRejectsCapitalism.Gameplay
         public bool Ready => (allowExitWithoutObservation || RequirementCompleted)
             && !dialogue.IsPlaying && !IsTransitioning;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private const string FinalToiletScene = "Slice_Act05_FinalToilet";
+        private static AsyncOperation developmentJump;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetDevelopmentJump() => developmentJump = null;
+
+        internal static bool TryJumpToFinalToilet(FirstPersonPlayer owner)
+        {
+            if (developmentJump != null || !Application.CanStreamedLevelBeLoaded(FinalToiletScene))
+                return false;
+
+            var flow = FindFirstObjectByType<SliceActFlow>();
+            if ((flow != null && flow.IsTransitioning && (!flow.IsEndingVisible || !flow.restartButton.interactable))
+                || FindFirstObjectByType<PrologueExhibitionDoor>()?.IsHandingOff == true
+                || owner.GetComponent<UI.PauseMenu>()?.IsReturningToTitle == true)
+                return false;
+
+            developmentJump = SceneManager.LoadSceneAsync(FinalToiletScene, LoadSceneMode.Single);
+            if (developmentJump == null)
+                return false;
+
+            owner.SetInputBlocked(true);
+            if (flow != null)
+            {
+                flow.IsTransitioning = true;
+                if (flow.IsEndingVisible)
+                {
+                    flow.restartButton.interactable = false;
+                    flow.quitButton.interactable = false;
+                }
+            }
+            developmentJump.completed += PlaceAtFinalToilet;
+            return true;
+        }
+
+        private static void PlaceAtFinalToilet(AsyncOperation operation)
+        {
+            developmentJump = null;
+            Time.timeScale = 1f;
+            var flow = FindFirstObjectByType<SliceActFlow>();
+            if (flow == null || flow.gameObject.scene.name != FinalToiletScene
+                || flow.observations is not { Length: 1 } || flow.observations[0] == null
+                || !flow.observations[0].TryGetComponent<Collider>(out var toilet))
+                return;
+
+            // Stand inside the room, beyond the arrival dialogue trigger and clear of the bowl.
+            var target = toilet.bounds.center;
+            var position = target + Vector3.back * 1.55f;
+            position.y = flow.player.transform.position.y;
+            flow.player.PlaceForFinalToiletTest(position, target);
+        }
+#endif
+
         private void Awake()
         {
             IsTransitioning = fadeOnArrival;

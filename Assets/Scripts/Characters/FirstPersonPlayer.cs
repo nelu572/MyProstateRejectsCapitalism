@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using MyProstateRejectsCapitalism.UI;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using MyProstateRejectsCapitalism.Gameplay;
+#endif
 
 namespace MyProstateRejectsCapitalism.Characters
 {
@@ -33,7 +36,9 @@ namespace MyProstateRejectsCapitalism.Characters
         private float pitch;
         private float verticalVelocity;
         private int cursorLockedFrame;
+        private int dialogueInputFrame = -1;
         private bool allowCursorCaptureWhileBlocked;
+        private bool exhibitInspectionLocked;
         private CursorLockMode cursorBeforePause;
 
         public Camera ViewCamera => viewCamera;
@@ -66,6 +71,13 @@ namespace MyProstateRejectsCapitalism.Characters
         }
 
         public void SetDialogueLookAllowed(bool allowed) => DialogueLookAllowed = allowed;
+
+        internal void SetExhibitInspectionLock(bool locked)
+        {
+            exhibitInspectionLocked = locked;
+            SetInputBlocked(locked);
+            ResetMotion();
+        }
 
         internal void SetPaused(bool paused)
         {
@@ -104,8 +116,12 @@ namespace MyProstateRejectsCapitalism.Characters
             verticalVelocity = 0f;
         }
 
-        // The template action has a Hold interaction; use the press threshold for immediate E input.
-        public bool InteractionPressedThisFrame => CanControl && interactAction.WasPressedThisFrame();
+        // Sample one press for both bindings. Cursor capture and dialogue reserve their input frame.
+        public bool InteractionPressedThisFrame => CanControl && !EscapePressed
+            && Time.frameCount != dialogueInputFrame
+            && (interactAction.WasPressedThisFrame() || Mouse.current?.leftButton.wasPressedThisFrame == true);
+
+        internal void ReserveDialogueInputFrame() => dialogueInputFrame = Time.frameCount;
 
         private void Awake()
         {
@@ -165,7 +181,13 @@ namespace MyProstateRejectsCapitalism.Characters
 
         private void Update()
         {
-            if (IsPaused)
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.ctrlKey.isPressed && keyboard.shiftKey.isPressed
+                && keyboard.f9Key.wasPressedThisFrame && SliceActFlow.TryJumpToFinalToilet(this))
+                return;
+#endif
+            if (IsPaused || exhibitInspectionLocked)
                 return;
             if (EscapePressed)
             {
@@ -226,6 +248,21 @@ namespace MyProstateRejectsCapitalism.Characters
             if (useMovementTuning && controller.isGrounded && verticalVelocity < 0f)
                 verticalVelocity = -2f;
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        internal void PlaceForFinalToiletTest(Vector3 position, Vector3 target)
+        {
+            controller.enabled = false;
+            transform.position = position;
+            var direction = target - viewCamera.transform.position;
+            transform.rotation = Quaternion.Euler(0f, Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg, 0f);
+            pitch = -Mathf.Atan2(direction.y, new Vector2(direction.x, direction.z).magnitude) * Mathf.Rad2Deg;
+            viewCamera.transform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+            ResetMotion();
+            controller.enabled = true;
+            SetCursorLocked(true);
+        }
+#endif
 
         private void SnapToGround()
         {

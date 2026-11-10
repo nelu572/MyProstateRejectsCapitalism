@@ -7,6 +7,9 @@ Shader "Prologue/ExhibitionProductPorcelain"
         _BaseColor ("Product colour", Color) = (.94,.945,.935,1)
         _Glaze ("Soft glaze", Range(0,.12)) = .045
         _Roughness ("Glaze roughness", Range(.3,1)) = .65
+        [HideInInspector] _InspectionRim ("Inspection glaze rim", Float) = 0
+        [HideInInspector] _InspectionKey ("Local inspection key", Vector) = (0,0,0,0)
+        [HideInInspector] _InspectionKeyWeight ("Local inspection key weight", Float) = 0
     }
     SubShader
     {
@@ -18,10 +21,14 @@ Shader "Prologue/ExhibitionProductPorcelain"
             #pragma vertex Vert
             #pragma fragment Frag
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Assets/Materials/Prologue/Exhibition/ExhibitionFocusLighting.hlsl"
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
                 half _Glaze;
                 half _Roughness;
+                half _InspectionRim;
+                float4 _InspectionKey;
+                half _InspectionKeyWeight;
             CBUFFER_END
             struct Attributes { float4 positionOS : POSITION; float3 normalOS : NORMAL; half4 tint : COLOR; };
             struct Varyings
@@ -51,7 +58,17 @@ Shader "Prologue/ExhibitionProductPorcelain"
                 half broad = pow(nh,lerp(36.0h,10.0h,_Roughness));
                 half edge = pow(1.0h-saturate(dot(n,v)),3.0h);
                 half glaze = _Glaze * (.8h*broad + .2h*edge);
-                return half4(saturate((_BaseColor.rgb * form + glaze) * input.tint.rgb),1);
+                half3 color = _BaseColor.rgb * form + glaze;
+                UNITY_BRANCH if (_InspectionRim > 0)
+                {
+                    half3 rimSide = normalize(half3(-.24h, .62h, .72h));
+                    half grazing = pow(1.0h - saturate(dot(n, v)), 3.8h);
+                    half rim = _InspectionRim * grazing * smoothstep(-.18h, .68h, dot(n, rimSide));
+                    color += rim * half3(.155h, .100h, .033h);
+                }
+                UNITY_BRANCH if (_InspectionKeyWeight > 0)
+                    color += ExhibitionFocusKey(input.positionWS, n, v, _InspectionKey, _InspectionKeyWeight);
+                return half4(saturate(color * input.tint.rgb),1);
             }
             ENDHLSL
         }
