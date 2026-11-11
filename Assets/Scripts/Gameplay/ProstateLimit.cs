@@ -47,13 +47,8 @@ namespace MyProstateRejectsCapitalism.Gameplay
         {
             var keyboard = Keyboard.current;
             if (keyboard == null || !keyboard.ctrlKey.isPressed || !keyboard.shiftKey.isPressed
-                || !keyboard.f8Key.wasPressedThisFrame)
+                || !keyboard.f8Key.wasPressedThisFrame || keyboard.f9Key.wasPressedThisFrame)
                 return false;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (keyboard.f9Key.wasPressedThisFrame)
-                return false;
-#endif
 
             cheatLevel = (cheatLevel + 1) % CheatLevels.Length;
             remaining = CheatLevels[cheatLevel];

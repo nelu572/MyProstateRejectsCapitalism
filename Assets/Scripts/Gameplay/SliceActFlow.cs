@@ -51,7 +51,6 @@ namespace MyProstateRejectsCapitalism.Gameplay
         internal bool TracksLimit => !IsTransitioning && !IsEndingVisible
             && !(endAfterDialogue && RequirementCompleted);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string FinalToiletScene = "Slice_Act05_FinalToilet";
         private static AsyncOperation developmentJump;
 
@@ -103,8 +102,6 @@ namespace MyProstateRejectsCapitalism.Gameplay
             position.y = flow.player.transform.position.y;
             flow.player.PlaceForFinalToiletTest(position, target);
         }
-#endif
-
         private void Awake()
         {
             IsTransitioning = fadeOnArrival;

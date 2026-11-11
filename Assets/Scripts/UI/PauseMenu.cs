@@ -31,9 +31,7 @@ namespace MyProstateRejectsCapitalism.UI
         private float previousTimeScale;
         private bool returningToTitle;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         internal bool IsReturningToTitle => returningToTitle;
-#endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void InstallForGame()

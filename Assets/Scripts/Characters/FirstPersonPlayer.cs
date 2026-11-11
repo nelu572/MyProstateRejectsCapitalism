@@ -1,9 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using MyProstateRejectsCapitalism.UI;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using MyProstateRejectsCapitalism.Gameplay;
-#endif
 
 namespace MyProstateRejectsCapitalism.Characters
 {
@@ -183,12 +181,10 @@ namespace MyProstateRejectsCapitalism.Characters
 
         private void Update()
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             var keyboard = Keyboard.current;
             if (keyboard != null && keyboard.ctrlKey.isPressed && keyboard.shiftKey.isPressed
                 && keyboard.f9Key.wasPressedThisFrame && SliceActFlow.TryJumpToFinalToilet(this))
                 return;
-#endif
             if (IsPaused || exhibitInspectionLocked)
                 return;
             if (EscapePressed)
@@ -249,7 +245,6 @@ namespace MyProstateRejectsCapitalism.Characters
                 verticalVelocity = -2f;
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         internal void PlaceForFinalToiletTest(Vector3 position, Vector3 target)
         {
             controller.enabled = false;
@@ -262,8 +257,6 @@ namespace MyProstateRejectsCapitalism.Characters
             controller.enabled = true;
             SetCursorLocked(true);
         }
-#endif
-
         private void SnapToGround()
         {
             if (groundSnapDistance <= 0f)
