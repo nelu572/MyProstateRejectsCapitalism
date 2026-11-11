@@ -25,9 +25,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
         private float observedAt;
         private bool handoffStarted;
         private SliceActFlow handoffFlow;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         internal bool IsHandingOff => handoffStarted;
-#endif
         public float OpenFraction { get; private set; }
         public bool IsOpen => OpenFraction >= 1f;
         public bool ExhibitionObserved { get; private set; }
