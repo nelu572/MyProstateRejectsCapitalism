@@ -18,7 +18,7 @@ namespace MyProstateRejectsCapitalism.UI
         [SerializeField] private Transform terminalMount;
         [SerializeField] private Transform[] insetSteps;
         private RectTransform front;
-        private RectTransform settings;
+        private SettingsMotion settings;
         private TitleLettering lettering;
         private GameObject monumentPanel;
         private bool loading;
@@ -47,7 +47,7 @@ namespace MyProstateRejectsCapitalism.UI
                 BuildTitle(font);
             }
             settings = MenuUi.BuildSettings(layout, font, MenuSettings.Sensitivity(MenuSettings.DefaultSensitivity),
-                MenuSettings.SubtitleSpeed(MenuSettings.DefaultSubtitleSpeed), CloseSettings);
+                MenuSettings.SubtitleSpeed(MenuSettings.DefaultSubtitleSpeed), CloseSettings).gameObject.AddComponent<SettingsMotion>();
             settings.gameObject.SetActive(false);
         }
 
@@ -59,9 +59,10 @@ namespace MyProstateRejectsCapitalism.UI
 
         private void BuildTitle(TMP_FontAsset font)
         {
-            MenuUi.Text(front, font, "공중위생 관리과", 91, 58, 440, 35, 23, MenuUi.Mint);
+            var captionFont = MenuUi.LoadPanelLabelFont(font);
+            MenuUi.Text(front, captionFont, "공중위생 관리과", 91, 58, 440, 35, 23, MenuUi.Mint);
             MenuUi.Panel(front, "Copper stamp rule", 91, 101, 184, 3, MenuUi.Amber, MenuPlate.Shape.Rectangle);
-            MenuUi.Text(front, font, "PUBLIC TOILET  /  05-A", 91, 112, 420, 32, 17, MenuUi.Paper);
+            MenuUi.Text(front, captionFont, "PUBLIC TOILET  /  05-A", 91, 112, 420, 32, 17, MenuUi.Paper);
 
             var controls = MenuUi.Panel(front, "Payment control strip", 85, 882, 970, 136,
                 new Color32(18, 33, 31, 243), MenuPlate.Shape.Ticket);
@@ -72,22 +73,23 @@ namespace MyProstateRejectsCapitalism.UI
                 MenuPlate.Shape.Terminal, OpenSettings);
             MenuUi.Button(controls, font, "종료", 703, 38, 162, 62, new Color32(93, 87, 69, 255),
                 MenuUi.Paper, MenuPlate.Shape.Ticket, Quit);
-            MenuUi.Text(controls, font, "05", 885, 38, 60, 62, 26, MenuUi.Mint, TextAlignmentOptions.Center);
-            MenuUi.Text(front, font, "수납 확인 전 사용 금지", 1335, 943, 458, 52, 24, MenuUi.Paper,
+            MenuUi.Text(controls, captionFont, "05", 885, 38, 60, 62, 26, MenuUi.Mint, TextAlignmentOptions.Center);
+            MenuUi.Text(front, captionFont, "수납 확인 전 사용 금지", 1335, 943, 458, 52, 24, MenuUi.Paper,
                 TextAlignmentOptions.MidlineRight);
         }
 
         private void OpenSettings()
         {
+            if (loading || settings.gameObject.activeSelf)
+                return;
             ShowFront(false);
-            settings.gameObject.SetActive(true);
+            settings.Show();
         }
 
         private void CloseSettings()
         {
-            MenuSettings.Save();
-            settings.gameObject.SetActive(false);
-            ShowFront(true);
+            if (settings.TryClose(() => ShowFront(true)))
+                MenuSettings.Save();
         }
 
         private void ShowFront(bool visible)

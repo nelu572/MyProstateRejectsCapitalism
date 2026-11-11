@@ -613,8 +613,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "1\uD68C \uC774\uC6A9\uB8CC"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: eba3e17e9efbf354e8783bbb307baf26, type: 2}
-  m_sharedMaterial: {fileID: -56266975684464264, guid: eba3e17e9efbf354e8783bbb307baf26, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: a9e14723099afc54b8e339099ad5bacc, type: 2}
+  m_sharedMaterial: {fileID: 7111004178650821560, guid: a9e14723099afc54b8e339099ad5bacc, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -644,7 +644,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -709,7 +709,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -56266975684464264, guid: eba3e17e9efbf354e8783bbb307baf26, type: 2}
+  - {fileID: 7111004178650821560, guid: a9e14723099afc54b8e339099ad5bacc, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4291,8 +4291,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "500\uC6D0"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: eba3e17e9efbf354e8783bbb307baf26, type: 2}
-  m_sharedMaterial: {fileID: -56266975684464264, guid: eba3e17e9efbf354e8783bbb307baf26, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: a9e14723099afc54b8e339099ad5bacc, type: 2}
+  m_sharedMaterial: {fileID: 7111004178650821560, guid: a9e14723099afc54b8e339099ad5bacc, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -4322,7 +4322,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -4387,7 +4387,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: -56266975684464264, guid: eba3e17e9efbf354e8783bbb307baf26, type: 2}
+  - {fileID: 7111004178650821560, guid: a9e14723099afc54b8e339099ad5bacc, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

@@ -37,6 +37,7 @@ namespace MyProstateRejectsCapitalism.UI
         {
             var pause = Resources.Load<Texture2D>("Menus/PauseMeltLettering");
             var shared = Resources.Load<Texture2D>("Menus/SettingsMeltLettering");
+            var captionFont = MenuUi.LoadPanelLabelFont(font);
             var face = MenuUi.Rect(parent, "Pause control panel", 620, 248, 680, 584);
             Plate(face, "Cast shadow", 9, 13, 680, 575, new Color32(15, 8, 6, 175), Casting);
             Plate(face, "Bent bronze rim", 0, 0, 680, 575, Bronze, Casting);
@@ -56,7 +57,7 @@ namespace MyProstateRejectsCapitalism.UI
                 new Rect(29, 6, 332, 108), light: false, fallbackSize: 64);
             var tag = Plate(face, "Interrupt tag", 497, 58, 131, 42, Red, Enamel);
             tag.localRotation = Quaternion.Euler(0, 0, -4);
-            MenuUi.Text(tag, font, "PAUSE / 01", 3, 0, 125, 40, 19, Ivory, TextAlignmentOptions.Center);
+            MenuUi.Text(tag, captionFont, "PAUSE / 01", 3, 0, 125, 40, 19, Ivory, TextAlignmentOptions.Center);
 
             Control(face, font, "계속하기", new Rect(67, 186, 544, 123), pause,
                 new RectInt(0, 256, 748, 244), 190, true, resume);
@@ -65,7 +66,7 @@ namespace MyProstateRejectsCapitalism.UI
             Control(face, font, "메인화면으로", new Rect(262, 354, 349, 89), pause,
                 new RectInt(0, 512, 1112, 244), 238, false, title);
             Plate(face, "Footer seam", 68, 481, 542, 1, new Color32(102, 70, 47, 255));
-            MenuUi.Text(face, font, "ESC", 69, 494, 62, 42, 23, Gold);
+            MenuUi.Text(face, captionFont, "ESC", 69, 494, 62, 42, 23, Gold);
             Letter(face, font, pause, "계속하기", new RectInt(0, 256, 748, 244),
                 new Rect(134, 502, 81, 26), light: false, fallbackSize: 18);
             return face;

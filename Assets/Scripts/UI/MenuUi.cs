@@ -170,6 +170,8 @@ namespace MyProstateRejectsCapitalism.UI
             var panel = Rect(parent, "Shared settings", 407, 106, 1106, 868);
             var print = panel.gameObject.AddComponent<SettingsPrint>();
             print.Initialize(font);
+            var captionFont = LoadPanelLabelFont(font);
+            var digitFont = Resources.Load<TMP_FontAsset>("Menus/PanelCounter-ChakraPetch") ?? font;
             ControlSurface(panel, "Casting shadow", 8, 15, 1106, 851, new Color32(17, 11, 9, 161), ChassisOutline);
             ControlSurface(panel, "Warped bronze chassis", 0, 5, 1106, 848, ControlSteel, ChassisOutline);
             ControlSurface(panel, "Painted iron inside the rim", 8, 12, 1089, 830, ControlBlack, ChassisOutline);
@@ -180,15 +182,15 @@ namespace MyProstateRejectsCapitalism.UI
             Screw(panel, 42, 746);
             Screw(panel, 990, 791);
 
-            AddSettingsHeader(panel, font, print);
-            AddSlider(panel, font, print, "마우스 감도", 70, 188, MenuSettings.MinSensitivity, MenuSettings.MaxSensitivity,
+            AddSettingsHeader(panel, font, captionFont, print);
+            AddSlider(panel, font, digitFont, captionFont, print, "마우스 감도", 70, 188, MenuSettings.MinSensitivity, MenuSettings.MaxSensitivity,
                 sensitivity, false, MenuSettings.SetSensitivity);
-            AddSlider(panel, font, print, "자막 속도", 110, 356, MenuSettings.MinSubtitleSpeed, MenuSettings.MaxSubtitleSpeed,
+            AddSlider(panel, font, digitFont, captionFont, print, "자막 속도", 110, 356, MenuSettings.MinSubtitleSpeed, MenuSettings.MaxSubtitleSpeed,
                 speed, true, MenuSettings.SetSubtitleSpeed);
-            AddDisplaySwitches(panel, font, print);
+            AddDisplaySwitches(panel, font, captionFont, print);
 
-            print.Apply(Text(panel, font, "ESC", 91, 760, 60, 47, 22, ControlGold), subtle: true);
-            print.Apply(Text(panel, font, "돌아가기", 153, 760, 220, 47, 25, ControlIvory), subtle: true);
+            Text(panel, captionFont, "ESC", 91, 760, 60, 47, 22, ControlGold);
+            Text(panel, captionFont, "돌아가기", 153, 760, 220, 47, 25, ControlIvory);
             var release = ControlSurface(panel, "Offset red return bracket", 836, 660, 216, 105, ControlRed, PlateOutline);
             ControlSurface(release, "Return lever shadow", 12, 17, 200, 70, ControlBlack, PlateOutline);
             var backButton = Button(release, font, "돌아가기", 5, 12, 197, 69, ControlIvory, ControlBlack,
@@ -196,10 +198,15 @@ namespace MyProstateRejectsCapitalism.UI
             print.ApplyWord(backButton.GetComponentInChildren<TextMeshProUGUI>());
             SettingsPrint.SetButtonContrast(backButton, lightSurface: true);
             Feedback(backButton, ControlIvory, new Color32(255, 235, 181, 255), new Color32(211, 147, 68, 255));
+            SettingsButtonMotion.Attach(backButton);
             return panel;
         }
 
-        private static void AddSettingsHeader(Transform panel, TMP_FontAsset font, SettingsPrint print)
+        internal static TMP_FontAsset LoadPanelLabelFont(TMP_FontAsset fallback) =>
+            Resources.Load<TMP_FontAsset>("Menus/PanelLabel-Galmuri") ?? fallback;
+
+        private static void AddSettingsHeader(Transform panel, TMP_FontAsset font, TMP_FontAsset captionFont,
+            SettingsPrint print)
         {
             var plaque = ControlSurface(panel, "Crooked enamel nameplate", 49, 10, 493, 150,
                 new Color32(115, 63, 29, 255), PlateOutline);
@@ -219,17 +226,13 @@ namespace MyProstateRejectsCapitalism.UI
                 TitleSyllable(plaque, font, print, "설", 28, -3, 104, 2f);
                 TitleSyllable(plaque, font, print, "정", 127, 1, 100, -3f);
             }
-            var service = Text(plaque, font, "SERVICE / 05", 262, 44, 166, 51, 23, ControlBlack);
-            service.fontStyle = FontStyles.Bold;
-            print.Apply(service, subtle: true);
+            Text(plaque, captionFont, "SERVICE / 05", 262, 44, 166, 51, 23, ControlBlack);
 
             var warning = ControlSurface(panel, "Battered warning sticker", 765, 30, 275, 58, ControlRed, PlateOutline);
             warning.localRotation = Quaternion.Euler(0, 0, -4);
-            var notice = Text(warning, font, "OUT OF ORDER", 15, 0, 245, 56, 25, ControlIvory, TextAlignmentOptions.Center);
-            notice.fontStyle = FontStyles.Bold;
-            print.Apply(notice, subtle: true);
-            print.Apply(Text(panel, font, "변경 사항은 즉시 적용됩니다", 581, 105, 470, 46, 27, ControlIvory,
-                TextAlignmentOptions.MidlineRight), subtle: true);
+            Text(warning, captionFont, "OUT OF ORDER", 15, 0, 245, 56, 25, ControlIvory, TextAlignmentOptions.Center);
+            Text(panel, captionFont, "변경 사항은 즉시 적용됩니다", 581, 105, 470, 46, 26, ControlIvory,
+                TextAlignmentOptions.MidlineRight);
         }
 
         private static void TitleSyllable(Transform plaque, TMP_FontAsset font, SettingsPrint print, string syllable, float x, float y,
@@ -243,7 +246,8 @@ namespace MyProstateRejectsCapitalism.UI
             print.Apply(face, headline: true);
         }
 
-        private static void AddDisplaySwitches(Transform panel, TMP_FontAsset font, SettingsPrint print)
+        private static void AddDisplaySwitches(Transform panel, TMP_FontAsset font, TMP_FontAsset captionFont,
+            SettingsPrint print)
         {
             var module = ControlSurface(panel, "Display switch mounting plate", 62, 539, 754, 198, ControlSteel, PlateOutline);
             ControlSurface(module, "Display switch recess", 7, 6, 738, 184, new Color32(54, 39, 31, 255), PlateOutline);
@@ -252,12 +256,13 @@ namespace MyProstateRejectsCapitalism.UI
             var modeLabel = Text(module, font, "화면 모드", 34, 22, 289, 48, 34, ControlGold);
             modeLabel.fontStyle = FontStyles.Bold;
             print.ApplyWord(modeLabel);
-            var status = Text(module, font, "", 365, 23, 325, 45, 26, ControlGold, TextAlignmentOptions.MidlineRight);
-            print.Apply(status, subtle: true);
+            var status = Text(module, captionFont, "", 365, 23, 325, 45, 26, ControlGold, TextAlignmentOptions.MidlineRight);
             var fullscreen = DisplaySwitch(module, font, "전체화면", 34, () => MenuSettings.SetFullscreen(true));
             var windowed = DisplaySwitch(module, font, "창모드", 367, () => MenuSettings.SetFullscreen(false));
             print.ApplyWord(fullscreen.GetComponentInChildren<TextMeshProUGUI>());
             print.ApplyWord(windowed.GetComponentInChildren<TextMeshProUGUI>());
+            SettingsButtonMotion.Attach(fullscreen);
+            SettingsButtonMotion.Attach(windowed);
             void ShowMode(bool full)
             {
                 status.text = full ? "현재: 전체화면" : "현재: 창모드";
@@ -286,8 +291,9 @@ namespace MyProstateRejectsCapitalism.UI
                 Feedback(button, new Color32(84, 57, 42, 255), new Color32(123, 77, 45, 255), ControlRed);
         }
 
-        private static void AddSlider(RectTransform panel, TMP_FontAsset font, SettingsPrint print, string title, float x, float y,
-            float min, float max, float current, bool wholeNumbers, Action<float> apply)
+        private static void AddSlider(RectTransform panel, TMP_FontAsset font, TMP_FontAsset digitFont,
+            TMP_FontAsset captionFont, SettingsPrint print, string title, float x, float y, float min, float max, float current,
+            bool wholeNumbers, Action<float> apply)
         {
             var casing = ControlSurface(panel, title + " dented housing", x, y, 918, 150, ControlSteel, PlateOutline);
             ControlSurface(casing, "Recessed iron face", 6, 6, 906, 136, new Color32(48, 36, 30, 255), PlateOutline);
@@ -301,8 +307,15 @@ namespace MyProstateRejectsCapitalism.UI
             print.ApplyWord(label);
             ControlSurface(casing, "Counter rim", 711, 44, 171, 68, ControlSteel, PlateOutline);
             ControlSurface(casing, "Counter recess", 716, 48, 162, 59, ControlBlack, PlateOutline);
-            var number = Text(casing, font, "", 720, 47, 153, 60, 28, ControlGold, TextAlignmentOptions.Center);
-            print.Apply(number, subtle: true);
+            float digitsWidth = wholeNumbers ? 74f : 153f;
+            var align = wholeNumbers ? TextAlignmentOptions.MidlineRight : TextAlignmentOptions.Center;
+            var lip = CounterDigits(casing, digitFont, "Counter bevel", 47.8f, digitsWidth, align,
+                new Color32(255, 225, 157, 255));
+            var recess = CounterDigits(casing, digitFont, "Counter shadow", 44.5f, digitsWidth, align,
+                new Color32(95, 52, 26, 255));
+            var number = CounterDigits(casing, digitFont, "Counter digits", 46f, digitsWidth, align, ControlGold);
+            if (wholeNumbers)
+                Text(casing, captionFont, "자/초", 803, 48, 69, 60, 22, ControlGold);
 
             var rect = Rect(casing, title + " slider", 281, 43, 421, 63);
             ControlSurface(rect, "Cast track rim", 0, 17, 421, 30, ControlSteel, PlateOutline);
@@ -338,10 +351,23 @@ namespace MyProstateRejectsCapitalism.UI
             colors.pressedColor = new Color32(201, 130, 53, 255);
             slider.colors = colors;
             slider.SetValueWithoutNotify(current);
-            void Show(float value) => number.text = wholeNumbers
-                ? $"{Mathf.RoundToInt(value)} 자/초" : value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            void Show(float value)
+            {
+                string digits = wholeNumbers ? Mathf.RoundToInt(value).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+                number.text = lip.text = recess.text = digits;
+            }
             Show(current);
             slider.onValueChanged.AddListener(value => { apply(value); Show(value); });
+        }
+
+        private static TextMeshProUGUI CounterDigits(Transform parent, TMP_FontAsset font, string name, float y,
+            float width, TextAlignmentOptions alignment, Color color)
+        {
+            var text = Text(parent, font, string.Empty, 720, y, width, 60, 36, color, alignment);
+            text.name = name;
+            text.characterSpacing = 1.5f;
+            return text;
         }
 
         private static RectTransform ControlSurface(Transform parent, string name, float x, float y,

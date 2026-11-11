@@ -25,7 +25,7 @@ namespace MyProstateRejectsCapitalism.UI
         private bool restoreDialogueCanvas;
         private RectTransform surface;
         private RectTransform front;
-        private RectTransform settings;
+        private SettingsMotion settings;
         private Image backdrop;
         private static readonly Color SettingsShade = new(0f, .03f, .025f, .72f);
         private float previousTimeScale;
@@ -143,25 +143,28 @@ namespace MyProstateRejectsCapitalism.UI
             MenuUi.EnsureEventSystem(surface);
             front = PauseMenuArt.Build(layout, font, Resume, OpenSettings, ReturnToTitle);
             settings = MenuUi.BuildSettings(layout, font, player.MouseSensitivity,
-                dialogue == null ? MenuSettings.DefaultSubtitleSpeed : dialogue.SubtitleSpeed, CloseSettings);
+                dialogue == null ? MenuSettings.DefaultSubtitleSpeed : dialogue.SubtitleSpeed, CloseSettings)
+                .gameObject.AddComponent<SettingsMotion>();
             settings.gameObject.SetActive(false);
         }
 
         private void OpenSettings()
         {
-            if (returningToTitle)
+            if (returningToTitle || settings.gameObject.activeSelf)
                 return;
             backdrop.color = SettingsShade;
             front.gameObject.SetActive(false);
-            settings.gameObject.SetActive(true);
+            settings.Show();
         }
 
         private void CloseSettings()
         {
-            MenuSettings.Save();
-            backdrop.color = PauseMenuArt.PauseShade;
-            settings.gameObject.SetActive(false);
-            front.gameObject.SetActive(true);
+            if (settings.TryClose(() =>
+                {
+                    backdrop.color = PauseMenuArt.PauseShade;
+                    front.gameObject.SetActive(true);
+                }))
+                MenuSettings.Save();
         }
 
         private void ReturnToTitle()
