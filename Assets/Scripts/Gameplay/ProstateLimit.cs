@@ -2,11 +2,9 @@ using MyProstateRejectsCapitalism.Characters;
 using MyProstateRejectsCapitalism.Dialogue;
 using MyProstateRejectsCapitalism.UI;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-using UnityEngine.InputSystem;
-#endif
 
 namespace MyProstateRejectsCapitalism.Gameplay
 {
@@ -14,11 +12,9 @@ namespace MyProstateRejectsCapitalism.Gameplay
     internal sealed class ProstateLimit : MonoBehaviour
     {
         private const string VolumeLayer = "Prostate Limit FX";
+        private static readonly float[] CheatLevels = { 1f, .5f, .15f, .05f, 0f };
         private static float remaining = 1f;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static readonly float[] DevelopmentLevels = { 1f, .5f, .15f, .05f, 0f };
-        private static int developmentLevel;
-#endif
+        private static int cheatLevel;
 
         private SliceActFlow flow;
         private FirstPersonPlayer player;
@@ -43,25 +39,26 @@ namespace MyProstateRejectsCapitalism.Gameplay
         internal static void ResetRun()
         {
             remaining = 1f;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            developmentLevel = 0;
-#endif
+            cheatLevel = 0;
             CompanionAutoDialogue.ResetRun();
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static bool TryAdvanceDevelopmentLimit()
+        private static bool TryAdvanceCheatLimit()
         {
             var keyboard = Keyboard.current;
             if (keyboard == null || !keyboard.ctrlKey.isPressed || !keyboard.shiftKey.isPressed
-                || !keyboard.f8Key.wasPressedThisFrame || keyboard.f9Key.wasPressedThisFrame)
+                || !keyboard.f8Key.wasPressedThisFrame)
                 return false;
 
-            developmentLevel = (developmentLevel + 1) % DevelopmentLevels.Length;
-            remaining = DevelopmentLevels[developmentLevel];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (keyboard.f9Key.wasPressedThisFrame)
+                return false;
+#endif
+
+            cheatLevel = (cheatLevel + 1) % CheatLevels.Length;
+            remaining = CheatLevels[cheatLevel];
             return true;
         }
-#endif
 
 #if UNITY_EDITOR
         internal static void SetRemainingForReview(float value) => remaining = Mathf.Clamp01(value);
@@ -128,9 +125,7 @@ namespace MyProstateRejectsCapitalism.Gameplay
 
             if (tracksLimit && player.CanControl && !dialogue.IsPlaying && !inspecting)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                if (!TryAdvanceDevelopmentLimit())
-#endif
+                if (!TryAdvanceCheatLimit())
                     remaining = Mathf.Max(0f, remaining - Time.deltaTime / Mathf.Max(1f, settings.PlayableSeconds));
                 if (remaining <= 0f)
                 {
